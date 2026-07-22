@@ -1,0 +1,68 @@
+# Copyright (C) 2026 Chris B @ HivePress Community
+# This file is distributed under the GPLv2 or later.
+msgid ""
+msgstr ""
+"Project-Id-Version: Turnstile for HivePress 2.0.8\n"
+"Report-Msgid-Bugs-To: https://community.hivepress.io/\n"
+"POT-Creation-Date: 2026-07-22 12:00+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Domain: turnstile-for-hivepress\n"
+
+#. Plugin Name of the plugin
+msgid "Turnstile for HivePress"
+msgstr ""
+
+#. Description of the plugin
+msgid "Protects HivePress forms with Cloudflare Turnstile, using HivePress's own native captcha field system for full modal and AJAX support."
+msgstr ""
+
+#. Author of the plugin
+msgid "Chris B @ HivePress Community"
+msgstr ""
+
+#. translators: %s: link to the required plugin
+#: turnstile-for-hivepress.php:166
+msgid "<strong>Turnstile for HivePress</strong> requires the %s plugin to be installed and active."
+msgstr ""
+
+#: inc/captcha.php:135
+msgid "Captcha verification failed. Please try again."
+msgstr ""
+
+#: inc/admin.php:83
+msgid "HivePress"
+msgstr ""
+
+#: inc/admin.php:89
+msgid "Enter your Cloudflare Turnstile Site Key and Secret Key above, then save, before selecting forms."
+msgstr ""
+
+#: inc/admin.php:95
+msgid "Heads up: HivePress's built-in reCAPTCHA is also configured (Settings > Integrations). Any form selected in both places will show BOTH captchas and require both to pass. Remove the reCAPTCHA keys there if you want Turnstile only."
+msgstr ""
+
+#: inc/admin.php:100
+msgid "Protected Forms"
+msgstr ""
+
+#: inc/admin.php:103
+msgid "Select which HivePress forms should display the Turnstile widget. Works on both page forms and modal popups (login, register, reset password)."
+msgstr ""
+
+#: inc/admin.php:126
+msgid "Using a caching / JS-optimisation plugin?"
+msgstr ""
+
+#: inc/admin.php:127
+msgid "If the widget does not appear, add these keywords to your plugin's \"Exclude from Delay/Defer JavaScript\" list:"
+msgstr ""
+
+#. translators: %s: version number
+#: inc/admin.php:135
+msgid "Turnstile for HivePress v%s — by Chris B @ HivePress Community"
+msgstr ""
