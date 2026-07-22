@@ -180,7 +180,7 @@ function tfhp_define_field_class() {
 add_action( 'wp_enqueue_scripts', 'tfhp_enqueue_scripts' );
 function tfhp_enqueue_scripts() {
 
-	if ( ! tfhp_keys_ready() || ! tfhp_protected_forms() ) {
+	if ( ! function_exists( 'hivepress' ) || ! tfhp_keys_ready() || ! tfhp_protected_forms() ) {
 		return;
 	}
 
@@ -221,6 +221,27 @@ function tfhp_enqueue_scripts() {
 }
 
 /* --------------------------------------------------------------------------
+ * Avoid loading the Cloudflare API twice.
+ *
+ * SCT enqueues its own copy of api.js (handle 'cfturnstile') only while its
+ * widget renders inside page content — AFTER our wp_enqueue_scripts check ran.
+ * If that happened on this page, drop our copy just before footer scripts
+ * print: Cloudflare advises loading api.js only once per page, and any copy
+ * of the API exposes turnstile.render() for our explicit rendering.
+ * ----------------------------------------------------------------------- */
+
+add_action( 'wp_footer', 'tfhp_dedupe_turnstile_api', 1 );
+function tfhp_dedupe_turnstile_api() {
+
+	if (
+		wp_script_is( 'tfhp-cfturnstile', 'enqueued' ) &&
+		( wp_script_is( 'cfturnstile', 'enqueued' ) || wp_script_is( 'cfturnstile', 'done' ) )
+	) {
+		wp_dequeue_script( 'tfhp-cfturnstile' );
+	}
+}
+
+/* --------------------------------------------------------------------------
  * Preconnect to Cloudflare's challenge host so the API and widget assets
  * start their TCP/TLS handshake early, reducing the time-to-appear.
  * ----------------------------------------------------------------------- */
@@ -228,7 +249,7 @@ function tfhp_enqueue_scripts() {
 add_action( 'wp_head', 'tfhp_resource_hints', 1 );
 function tfhp_resource_hints() {
 
-	if ( ! tfhp_keys_ready() || ! tfhp_protected_forms() ) {
+	if ( ! function_exists( 'hivepress' ) || ! tfhp_keys_ready() || ! tfhp_protected_forms() ) {
 		return;
 	}
 	if ( function_exists( 'cfturnstile_whitelisted' ) && cfturnstile_whitelisted() ) {

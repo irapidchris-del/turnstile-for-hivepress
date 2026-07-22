@@ -30,8 +30,15 @@ class Turnstile extends Field {
 	 */
 	protected function boot() {
 
+		// Intentionally NOT using the 'cf-turnstile' class: Cloudflare's api.js
+		// auto-renders every '.cf-turnstile' element when loaded in auto mode,
+		// and the Simple Cloudflare Turnstile plugin loads its own auto-mode
+		// copy of api.js whenever it protects another form on the same page
+		// (comments, CF7, WooCommerce, ...). That auto-render would hit our
+		// widgets too — including ones hidden inside modals — breaking them.
+		// Our own JS renders '.tfhp-turnstile' elements explicitly instead.
 		$attributes = array(
-			'class'                => array( 'cf-turnstile', 'tfhp-turnstile' ),
+			'class'                => array( 'tfhp-turnstile' ),
 			'data-sitekey'         => get_option( 'cfturnstile_key' ),
 			'data-theme'           => get_option( 'cfturnstile_theme', 'auto' ),
 			'data-language'        => get_option( 'cfturnstile_language', 'auto' ),

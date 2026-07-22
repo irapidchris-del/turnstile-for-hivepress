@@ -90,6 +90,12 @@ function tfhp_render_settings_section() {
 			</p>
 		<?php endif; ?>
 
+		<?php if ( get_option( 'hp_recaptcha_site_key' ) && get_option( 'hp_recaptcha_secret_key' ) ) : ?>
+			<p style="margin:10px 0;color:#b32d2e;">
+				<?php esc_html_e( 'Heads up: HivePress\'s built-in reCAPTCHA is also configured (Settings > Integrations). Any form selected in both places will show BOTH captchas and require both to pass. Remove the reCAPTCHA keys there if you want Turnstile only.', 'turnstile-for-hivepress' ); ?>
+			</p>
+		<?php endif; ?>
+
 		<p style="margin:10px 0 6px;font-weight:600;font-size:13px;">
 			<?php esc_html_e( 'Protected Forms', 'turnstile-for-hivepress' ); ?>
 		</p>
@@ -158,6 +164,10 @@ function tfhp_save_protected_forms( $value ) {
 		! isset( $_POST['action'] ) ||
 		'update' !== $_POST['action']
 	) {
+		return $value;
+	}
+
+	if ( ! current_user_can( 'manage_options' ) ) {
 		return $value;
 	}
 

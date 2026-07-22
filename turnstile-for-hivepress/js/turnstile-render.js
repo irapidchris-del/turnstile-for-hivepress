@@ -194,8 +194,6 @@
 		}, true);
 	}
 
-	/* ---- modal widgets (FancyBox) -------------------------------------- */
-
 	/* ---- modal widgets (FancyBox) --------------------------------------
 	 *
 	 * HivePress switches between login / register / reset-password by calling

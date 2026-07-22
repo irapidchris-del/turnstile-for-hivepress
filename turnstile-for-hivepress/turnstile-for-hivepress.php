@@ -3,12 +3,15 @@
  * Plugin Name: Turnstile for HivePress
  * Plugin URI:  https://community.hivepress.io/
  * Description: Protects HivePress forms with Cloudflare Turnstile, using HivePress's own native captcha field system for full modal and AJAX support.
- * Version:     2.0.7
+ * Version:     2.0.8
  * Author:      Chris B @ HivePress Community
  * License:     GPLv2 or later
  * Text Domain: turnstile-for-hivepress
+ * Domain Path: /languages
  *
- * Requires Plugins: simple-cloudflare-turnstile, hivepress
+ * Requires at least: 6.0
+ * Requires PHP:      7.2
+ * Requires Plugins:  simple-cloudflare-turnstile, hivepress
  *
  * ---------------------------------------------------------------------------
  * ARCHITECTURE
@@ -43,7 +46,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'TFHP_VERSION', '2.0.7' );
+define( 'TFHP_VERSION', '2.0.8' );
 define( 'TFHP_FILE',    __FILE__ );
 define( 'TFHP_DIR',     plugin_dir_path( __FILE__ ) );
 define( 'TFHP_URL',     plugin_dir_url( __FILE__ ) );
@@ -128,6 +131,15 @@ if ( is_admin() ) {
 }
 
 /* --------------------------------------------------------------------------
+ * Translations.
+ * ----------------------------------------------------------------------- */
+
+add_action( 'init', 'tfhp_load_textdomain' );
+function tfhp_load_textdomain() {
+	load_plugin_textdomain( 'turnstile-for-hivepress', false, dirname( plugin_basename( TFHP_FILE ) ) . '/languages' );
+}
+
+/* --------------------------------------------------------------------------
  * Dependency notices (checked once everything is loaded).
  * ----------------------------------------------------------------------- */
 
@@ -145,23 +157,30 @@ function tfhp_check_dependencies() {
  * Admin notices
  * ----------------------------------------------------------------------- */
 
+function tfhp_dependency_notice( $plugin_link ) {
+	printf(
+		'<div class="notice notice-error"><p>%s</p></div>',
+		wp_kses(
+			sprintf(
+				/* translators: %s: link to the required plugin */
+				__( '<strong>Turnstile for HivePress</strong> requires the %s plugin to be installed and active.', 'turnstile-for-hivepress' ),
+				$plugin_link
+			),
+			array(
+				'strong' => array(),
+				'a'      => array(
+					'href'   => array(),
+					'target' => array(),
+				),
+			)
+		)
+	);
+}
+
 function tfhp_notice_turnstile() {
-	echo '<div class="notice notice-error"><p><strong>Turnstile for HivePress</strong> requires the '
-		. '<a href="https://wordpress.org/plugins/simple-cloudflare-turnstile/" target="_blank">Simple Cloudflare Turnstile</a>'
-		. ' plugin to be installed and active.</p></div>';
+	tfhp_dependency_notice( '<a href="https://wordpress.org/plugins/simple-cloudflare-turnstile/" target="_blank">Simple Cloudflare Turnstile</a>' );
 }
 
 function tfhp_notice_hivepress() {
-	echo '<div class="notice notice-error"><p><strong>Turnstile for HivePress</strong> requires '
-		. '<a href="https://wordpress.org/plugins/hivepress/" target="_blank">HivePress</a>'
-		. ' to be installed and active.</p></div>';
-}
-
-/* --------------------------------------------------------------------------
- * Uninstall
- * ----------------------------------------------------------------------- */
-
-register_uninstall_hook( __FILE__, 'tfhp_uninstall' );
-function tfhp_uninstall() {
-	delete_option( TFHP_OPTION );
+	tfhp_dependency_notice( '<a href="https://wordpress.org/plugins/hivepress/" target="_blank">HivePress</a>' );
 }

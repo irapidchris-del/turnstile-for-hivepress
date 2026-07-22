@@ -1,6 +1,6 @@
 # Turnstile for HivePress
 
-**Version:** 2.0.0
+**Version:** 2.0.8
 **Author:** Chris B @ HivePress Community
 **License:** GPLv2 or later
 
@@ -76,21 +76,65 @@ type `turnstile` to it directly.
 
 ### Modal rendering
 
-Cloudflare's auto-render skips elements hidden at page load, which is the case
-for modal forms (HivePress prints them hidden in the page footer). To handle
-this, the widget is rendered with `data-execution="execute"` to disable
-auto-render, and `js/turnstile-render.js` renders each widget explicitly the
-moment it becomes visible, using an IntersectionObserver plus a MutationObserver
-(and FancyBox's `afterShow` event as a fast path). This also prevents the
-`postMessage` origin errors caused by multiple hidden widgets auto-rendering at
-once.
+Cloudflare's auto-render breaks on elements that are hidden at page load, which
+is the case for modal forms (HivePress prints them hidden in the page footer).
+To handle this, the Cloudflare API is loaded in **explicit** mode
+(`api.js?render=explicit`, so nothing auto-renders) and `js/turnstile-render.js`
+renders each widget itself:
+
+- **Page widgets** render as soon as they become visible (IntersectionObserver,
+  with a MutationObserver re-scan for AJAX-injected forms).
+- **Modal widgets** render only on FancyBox's `afterShow` — after HivePress has
+  moved the modal's DOM node into the FancyBox overlay — and are torn down on
+  close, so every open renders a fresh, working widget.
+- Form submission is gated until a fresh token is present, and widgets are
+  reset after each HivePress AJAX submission (tokens are single-use).
+
+The widget div deliberately does **not** use Cloudflare's `cf-turnstile`
+class name, so that if the Simple Cloudflare Turnstile plugin loads its own
+auto-render copy of the API on the same page (e.g. to protect the comment
+form), it never touches this plugin's widgets. If both API copies do end up
+enqueued on one page, this plugin drops its own copy and shares SCT's.
 
 All keys, theme, language, size, appearance and server-side verification come
 from the Simple Cloudflare Turnstile plugin, so its settings apply automatically.
 
+### Using HivePress's built-in reCAPTCHA at the same time
+
+HivePress's own reCAPTCHA (Settings → Integrations) and this plugin share
+HivePress's captcha field system. If reCAPTCHA keys are configured AND a form
+is protected by this plugin, that form will show **both** widgets and require
+**both** to pass. If you are migrating to Turnstile, remove the reCAPTCHA keys
+from HivePress settings. A warning is shown in the settings panel when this
+situation is detected.
+
 ---
 
 ## Changelog
+
+### 2.0.8
+- Pre-release audit: every integration point was verified against the actual
+  HivePress and Simple Cloudflare Turnstile source code (form filter cascade,
+  field class contract, settings hooks, option names and verification API).
+- Removed the `cf-turnstile` class from the widget container. When SCT loads
+  its own auto-render copy of the Cloudflare API on the same page (e.g. for
+  the comment form), it auto-renders every `.cf-turnstile` element — including
+  our hidden modal widgets, breaking them. Our widgets are rendered explicitly
+  via `.tfhp-turnstile` and no longer need (or want) Cloudflare's class name.
+- If both this plugin's and SCT's copies of the Cloudflare API end up on the
+  same page, ours is now dropped before printing so only one copy loads
+  (Cloudflare recommends a single `api.js` per page).
+- Added a settings-panel warning when HivePress's built-in reCAPTCHA is also
+  configured: forms protected by both will show and enforce both captchas.
+- Frontend scripts and resource hints are no longer output when HivePress is
+  inactive but form selections remain saved.
+- Hardening: explicit `manage_options` capability check in the settings save
+  handler (the WordPress options flow already enforces it).
+- Uninstall cleanup moved to `uninstall.php` (WordPress's preferred mechanism).
+- Dependency notices are now translatable; added `Requires at least`,
+  `Requires PHP` and `Domain Path` headers and textdomain loading.
+- Fixed the README version (it still said 2.0.0) and corrected the stale
+  `data-execution="execute"` description of how modal rendering works.
 
 ### 2.0.7
 - Fixed the widget going missing when switching between login / register /
