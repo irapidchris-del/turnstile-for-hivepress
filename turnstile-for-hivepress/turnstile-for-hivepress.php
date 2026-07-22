@@ -9,7 +9,7 @@
  * Text Domain: turnstile-for-hivepress
  * Domain Path: /languages
  *
- * Requires at least: 6.0
+ * Requires at least: 6.5
  * Requires PHP:      7.2
  * Requires Plugins:  simple-cloudflare-turnstile, hivepress
  *
