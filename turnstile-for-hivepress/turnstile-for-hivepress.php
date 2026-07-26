@@ -3,7 +3,7 @@
  * Plugin Name: Turnstile for HivePress
  * Plugin URI:  https://community.hivepress.io/
  * Description: Protects HivePress forms with Cloudflare Turnstile, using HivePress's own native captcha field system for full modal and AJAX support.
- * Version:     2.0.8
+ * Version:     2.1.0
  * Author:      Chris B @ HivePress Community
  * License:     GPLv2 or later
  * Text Domain: turnstile-for-hivepress
@@ -46,7 +46,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'TFHP_VERSION', '2.0.8' );
+define( 'TFHP_VERSION', '2.1.0' );
 define( 'TFHP_FILE',    __FILE__ );
 define( 'TFHP_DIR',     plugin_dir_path( __FILE__ ) );
 define( 'TFHP_URL',     plugin_dir_url( __FILE__ ) );
@@ -128,6 +128,43 @@ require_once TFHP_DIR . 'inc/captcha.php';
 
 if ( is_admin() ) {
 	require_once TFHP_DIR . 'inc/admin.php';
+}
+
+/* --------------------------------------------------------------------------
+ * GitHub-based auto-updates.
+ *
+ * Uses the bundled Plugin Update Checker library (lib/plugin-update-checker/)
+ * to surface new versions on the WordPress Plugins screen — update notices,
+ * "View details", and one-click update — served straight from this plugin's
+ * GitHub Releases.
+ *
+ * Release contract (see RELEASING.md):
+ *   - Tag each release with the version number (e.g. 2.1.0 or v2.1.0); the
+ *     checker reads the version from the tag.
+ *   - Attach a "turnstile-for-hivepress.zip" asset built so its top-level
+ *     folder is "turnstile-for-hivepress" (no version in the name). We install
+ *     ONLY that asset — never GitHub's auto-generated source zip, whose folder
+ *     name carries the version and would land in the wrong directory.
+ * ----------------------------------------------------------------------- */
+
+if ( file_exists( TFHP_DIR . 'lib/plugin-update-checker/plugin-update-checker.php' ) ) {
+
+	require_once TFHP_DIR . 'lib/plugin-update-checker/plugin-update-checker.php';
+
+	if ( class_exists( '\YahnisElsts\PluginUpdateChecker\v5\PucFactory' ) ) {
+
+		$tfhp_update_checker = \YahnisElsts\PluginUpdateChecker\v5\PucFactory::buildUpdateChecker(
+			'https://github.com/irapidchris-del/turnstile-for-hivepress/',
+			TFHP_FILE,
+			'turnstile-for-hivepress'
+		);
+
+		// Install the clean, fixed-name release asset rather than the source zip.
+		$tfhp_vcs_api = $tfhp_update_checker->getVcsApi();
+		if ( is_object( $tfhp_vcs_api ) && method_exists( $tfhp_vcs_api, 'enableReleaseAssets' ) ) {
+			$tfhp_vcs_api->enableReleaseAssets( '/turnstile-for-hivepress\.zip$/i' );
+		}
+	}
 }
 
 /* --------------------------------------------------------------------------

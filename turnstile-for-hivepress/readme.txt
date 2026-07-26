@@ -3,7 +3,7 @@ Tags: hivepress, cloudflare, turnstile, captcha, spam
 Requires at least: 6.5
 Tested up to: 7.0
 Requires PHP: 7.2
-Stable tag: 2.0.8
+Stable tag: 2.1.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -48,7 +48,15 @@ Both share HivePress's captcha field system. If HivePress reCAPTCHA keys are con
 
 Yes. The widget is added as a real HivePress form field and rendered only after the modal has finished opening, so it works reliably in the FancyBox popups, including when switching between login, register and reset password.
 
+= How does the plugin get updates? =
+
+It updates itself from its GitHub Releases using the bundled Plugin Update Checker library. New versions appear on your Plugins screen with an update notice, a "View details" changelog, and one-click update — just like any other plugin. WordPress checks automatically; you can force a check via Dashboard → Updates → Check again.
+
 == Changelog ==
+
+= 2.1.0 =
+* Added self-updating from GitHub Releases (bundled Plugin Update Checker library): update notifications, "View details" changelog, and one-click updates on the WordPress Plugins screen. No WordPress.org listing required.
+* Updates install a fixed-name release asset with a version-less top folder, so WordPress always installs into the correct directory.
 
 = 2.0.8 =
 * Pre-release audit: all integration points verified against the actual HivePress and Simple Cloudflare Turnstile source code.

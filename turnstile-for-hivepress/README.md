@@ -1,6 +1,6 @@
 # Turnstile for HivePress
 
-**Version:** 2.0.8
+**Version:** 2.1.0
 **Author:** Chris B @ HivePress Community
 **License:** GPLv2 or later
 
@@ -110,7 +110,34 @@ situation is detected.
 
 ---
 
+## Updates
+
+The plugin updates itself from this repository's **GitHub Releases** using the
+bundled [Plugin Update Checker](https://github.com/YahnisElsts/plugin-update-checker)
+library. New versions appear on your **Plugins** screen like any other plugin —
+update notice, "View details", and one-click update — with no WordPress.org
+listing needed. Sites check automatically (roughly every 12 hours); you can force
+a check via **Dashboard → Updates → Check again**.
+
+To always download the latest version directly:
+
+```
+https://github.com/irapidchris-del/turnstile-for-hivepress/releases/latest/download/turnstile-for-hivepress.zip
+```
+
+(Maintainers: see [`RELEASING.md`](../RELEASING.md) for the release process.)
+
+---
+
 ## Changelog
+
+### 2.1.0
+- Added self-updating from GitHub Releases via the bundled Plugin Update Checker
+  library: new versions now show on the WordPress Plugins screen with update
+  notifications, a "View details" changelog, and one-click updates — no
+  WordPress.org listing required.
+- Updates install a fixed-name release asset built with a version-less top
+  folder, so WordPress always lands the plugin in the correct directory.
 
 ### 2.0.8
 - Pre-release audit: every integration point was verified against the actual
