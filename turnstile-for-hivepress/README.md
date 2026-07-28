@@ -112,12 +112,15 @@ situation is detected.
 
 ## Updates
 
-The plugin updates itself from this repository's **GitHub Releases** using the
-bundled [Plugin Update Checker](https://github.com/YahnisElsts/plugin-update-checker)
-library. New versions appear on your **Plugins** screen like any other plugin —
-update notice, "View details", and one-click update — with no WordPress.org
-listing needed. Sites check automatically (roughly every 12 hours); you can force
-a check via **Dashboard → Updates → Check again**.
+The plugin updates itself from this repository's **GitHub Releases** using
+WordPress's own native update mechanism (the `update_plugins_github.com` filter,
+WP 5.8+, keyed off the plugin's `Update URI` header) — **no third-party library**.
+New versions appear on your **Plugins** screen like any other plugin: update
+notice, "View details" changelog, and one-click update, with no WordPress.org
+listing needed.
+
+WordPress checks automatically; you can force a check via **Dashboard → Updates →
+Check again**, or the plugin's **Check for updates** link on the Plugins screen.
 
 To always download the latest version directly:
 
@@ -132,12 +135,14 @@ https://github.com/irapidchris-del/turnstile-for-hivepress/releases/latest/downl
 ## Changelog
 
 ### 2.1.0
-- Added self-updating from GitHub Releases via the bundled Plugin Update Checker
-  library: new versions now show on the WordPress Plugins screen with update
-  notifications, a "View details" changelog, and one-click updates — no
-  WordPress.org listing required.
+- Added self-updating from GitHub Releases using WordPress's native
+  `update_plugins_github.com` filter (WP 5.8+) — no third-party library. New
+  versions show on the Plugins screen with update notifications, a "View details"
+  changelog, one-click updates, and a "Check for updates" row action.
 - Updates install a fixed-name release asset built with a version-less top
   folder, so WordPress always lands the plugin in the correct directory.
+- Added a GitHub Actions release workflow that builds and attaches the release
+  asset automatically.
 
 ### 2.0.8
 - Pre-release audit: every integration point was verified against the actual

@@ -50,13 +50,14 @@ Yes. The widget is added as a real HivePress form field and rendered only after 
 
 = How does the plugin get updates? =
 
-It updates itself from its GitHub Releases using the bundled Plugin Update Checker library. New versions appear on your Plugins screen with an update notice, a "View details" changelog, and one-click update — just like any other plugin. WordPress checks automatically; you can force a check via Dashboard → Updates → Check again.
+It updates itself from its GitHub Releases using WordPress's native update mechanism (the update_plugins_github.com filter, WP 5.8+) — no third-party library. New versions appear on your Plugins screen with an update notice, a "View details" changelog, and one-click update, just like any other plugin. WordPress checks automatically; you can force a check via Dashboard → Updates → Check again, or the plugin's "Check for updates" link.
 
 == Changelog ==
 
 = 2.1.0 =
-* Added self-updating from GitHub Releases (bundled Plugin Update Checker library): update notifications, "View details" changelog, and one-click updates on the WordPress Plugins screen. No WordPress.org listing required.
+* Added self-updating from GitHub Releases using WordPress's native update_plugins_github.com filter (WP 5.8+) — no third-party library. Update notifications, "View details" changelog, one-click updates, and a "Check for updates" link on the Plugins screen.
 * Updates install a fixed-name release asset with a version-less top folder, so WordPress always installs into the correct directory.
+* Added a GitHub Actions workflow that builds and attaches the release asset automatically.
 
 = 2.0.8 =
 * Pre-release audit: all integration points verified against the actual HivePress and Simple Cloudflare Turnstile source code.

@@ -36,7 +36,7 @@ fi
 
 # Runtime files that ship to users. Dev files (bin/, dist/, RELEASING.md,
 # .git, .github) live at the repo root and are excluded by construction.
-INCLUDE=( "$SLUG.php" uninstall.php readme.txt README.md LICENSE.txt inc js lib languages )
+INCLUDE=( "$SLUG.php" uninstall.php readme.txt README.md LICENSE.txt inc js languages )
 
 echo "Building $SLUG v$VERSION ..."
 rm -rf "$DIST/$SLUG"

@@ -1,0 +1,56 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag (e.g. v2.1.0)'
+        required: true
+      notes:
+        description: 'Release notes (Markdown, optional — auto-generated if empty)'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Builds dist/turnstile-for-hivepress.zip (a single top-level
+      # turnstile-for-hivepress/ folder, no version in the name) from the
+      # nested plugin directory. Same script used for local builds, so the
+      # release asset and a local build are always identical.
+      - name: Build plugin zip
+        run: bash bin/build.sh
+
+      - name: Create or refresh the release (manual dispatch)
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ inputs.tag }}
+          NOTES: ${{ inputs.notes }}
+        run: |
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            git tag -f "$TAG" "$GITHUB_SHA"
+            git push --force origin "refs/tags/$TAG"
+            if [ -n "$NOTES" ]; then
+              gh release edit "$TAG" --notes "$NOTES" --repo "$GITHUB_REPOSITORY"
+            fi
+            gh release upload "$TAG" dist/turnstile-for-hivepress.zip --clobber --repo "$GITHUB_REPOSITORY"
+          elif [ -n "$NOTES" ]; then
+            gh release create "$TAG" dist/turnstile-for-hivepress.zip --title "$TAG" --notes "$NOTES" --target "$GITHUB_SHA" --repo "$GITHUB_REPOSITORY"
+          else
+            gh release create "$TAG" dist/turnstile-for-hivepress.zip --title "$TAG" --generate-notes --target "$GITHUB_SHA" --repo "$GITHUB_REPOSITORY"
+          fi
+
+      - name: Upload asset to the release
+        if: github.event_name == 'release'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release upload "$GITHUB_REF_NAME" dist/turnstile-for-hivepress.zip --clobber --repo "$GITHUB_REPOSITORY"

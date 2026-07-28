@@ -1,66 +1,66 @@
 # Releasing Turnstile for HivePress
 
-The plugin ships with a self-updater (the bundled
-[Plugin Update Checker](https://github.com/YahnisElsts/plugin-update-checker)
-library) that reads this repo's **GitHub Releases**. When you publish a new
-release, every site running the plugin sees an update on its **Plugins** screen
-— update notice, "View details", and one-click update — with no wp.org listing
-required.
+The plugin updates itself from this repository's **GitHub Releases** using
+WordPress's native `update_plugins_github.com` filter (WP 5.8+) — no third-party
+library. New versions appear on every site's **Plugins** screen (update notice,
+"View details", one-click update). See `turnstile-for-hivepress/inc/updater.php`.
+
+A GitHub Actions workflow (`.github/workflows/release.yml`) builds the release
+zip and attaches it to the release automatically.
 
 ## How the pieces fit together
 
-- **Version number** lives in two places in `turnstile-for-hivepress/turnstile-for-hivepress.php`
-  (the `Version:` header and the `TFHP_VERSION` constant) and in
-  `readme.txt` (`Stable tag:`). Keep them in sync.
-- **The release tag** is the version the updater compares against. Tag
-  `2.1.0` or `v2.1.0` — the checker strips a leading `v`. An update is offered
-  only when the latest release's version is **higher** than the installed one.
-- **The release asset** must be named exactly **`turnstile-for-hivepress.zip`**.
-  The plugin installs *only* this asset (never GitHub's auto-generated “Source
-  code (zip)”, whose folder is named `turnstile-for-hivepress-<tag>` and would
-  land in the wrong directory). The fixed asset name is also what powers the
-  always-latest download link below.
+- **Version number** lives in the main plugin file
+  `turnstile-for-hivepress/turnstile-for-hivepress.php` (`Version:` header and
+  `TFHP_VERSION`) and in `readme.txt` (`Stable tag:`). Keep them in sync.
+- **The `Update URI` header** (`https://github.com/irapidchris-del/turnstile-for-hivepress`)
+  is what routes WordPress's update check to our filter. Don't change it.
+- **The release tag** is the version the updater compares against. Tag `2.1.0`
+  or `v2.1.0` — a leading `v` is stripped. An update is offered only when the
+  latest release's version is **higher** than the installed one.
+- **The release asset** must be named exactly **`turnstile-for-hivepress.zip`**
+  and contain a single top-level `turnstile-for-hivepress/` folder. The updater
+  picks the first `*.zip` asset; the fixed name also powers the always-latest
+  download link. The workflow builds this for you via `bin/build.sh`.
 
-## Release steps
+## Releasing from a Claude / automated session
 
-1. **Bump the version** in all three spots:
-   - `turnstile-for-hivepress/turnstile-for-hivepress.php` → `Version:` header
-   - same file → `define( 'TFHP_VERSION', 'X.Y.Z' );`
-   - `turnstile-for-hivepress/readme.txt` → `Stable tag: X.Y.Z`
+`gh` and the raw releases REST API are not available inside sessions, so drive
+the workflow through the GitHub MCP tools:
 
-   Add a changelog entry to `readme.txt` and `README.md`.
+1. **Bump the version** in `turnstile-for-hivepress/turnstile-for-hivepress.php`
+   (`Version:` + `TFHP_VERSION`) and `readme.txt` (`Stable tag:`). Add a
+   changelog entry to `readme.txt` and `README.md`.
+2. **Commit and merge to the default branch** (`main`). The workflow must exist
+   on `main` for `workflow_dispatch` to be available.
+3. **Trigger the workflow** with `actions_run_trigger`:
+   - method: `run_workflow`
+   - workflow_id: `release.yml`
+   - ref: `main`
+   - inputs: `{ "tag": "vX.Y.Z", "notes": "<changelog markdown>" }`
 
-2. **Build the zips:**
-   ```bash
-   bash bin/build.sh
-   ```
-   This produces:
-   - `dist/turnstile-for-hivepress.zip` — the release asset
-   - `dist/turnstile-for-hivepress-X.Y.Z.zip` — an identical, version-named
-     copy for your own records / internal testing
+   The workflow builds the zip and, since the release doesn't exist yet, runs
+   `gh release create "vX.Y.Z" … --target <sha>` with your notes, tagging the
+   merge commit and attaching `turnstile-for-hivepress.zip`.
+4. **Verify** with `get_release_by_tag` (tag `vX.Y.Z`) that the tag, notes and
+   the `turnstile-for-hivepress.zip` asset all landed.
 
-   Both contain a top-level `turnstile-for-hivepress/` folder (no version in the
-   name), so WordPress installs them into the correct directory.
+Re-running the workflow for an existing tag force-moves the tag to the new
+commit, updates the notes (if provided) and re-uploads the asset with
+`--clobber`, so it is safe to run repeatedly.
 
-3. **Commit and tag** on the default branch:
-   ```bash
-   git commit -am "Release X.Y.Z"
-   git tag X.Y.Z
-   git push && git push --tags
-   ```
+## Releasing manually (from a normal shell)
 
-4. **Create the GitHub release** for tag `X.Y.Z`, paste the changelog into the
-   release notes (these show under "View details" in WordPress), and **attach
-   `dist/turnstile-for-hivepress.zip`** as the release asset. Mark it as the
-   latest release (GitHub does this by default for the newest non-prerelease).
-
-That's it. Within ~12 hours WordPress sites check for updates automatically;
-admins can force an immediate check via **Dashboard → Updates → Check again**.
+1. Bump the version (as above), commit, and push to `main`.
+2. `bash bin/build.sh` → produces `dist/turnstile-for-hivepress.zip`.
+3. Create a GitHub release for the tag, paste the changelog, and attach
+   `dist/turnstile-for-hivepress.zip`. Publishing a `release` event also runs
+   the workflow, which re-uploads the asset with `--clobber` as a safety net.
 
 ## The always-latest download link (for the forum post)
 
 Because the asset name is fixed, this URL **always** redirects to the newest
-release's asset and downloads it immediately — post it once and never edit it:
+release's asset and downloads it immediately — post it once, never edit it:
 
 ```
 https://github.com/irapidchris-del/turnstile-for-hivepress/releases/latest/download/turnstile-for-hivepress.zip
@@ -68,12 +68,10 @@ https://github.com/irapidchris-del/turnstile-for-hivepress/releases/latest/downl
 
 ## Notes
 
-- A **pre-release** on GitHub is ignored by the updater's "latest release"
-  logic — handy for testing a build without offering it to everyone.
-- If you ever need to test the update flow: install an older version, publish a
-  higher-tagged release with the asset, then use **Dashboard → Updates → Check
-  again**.
-- Updating the bundled library: replace `turnstile-for-hivepress/lib/plugin-update-checker/`
-  with a newer release of Plugin Update Checker. The integration uses the
-  version-stable `\YahnisElsts\PluginUpdateChecker\v5\PucFactory` alias, so a
-  new v5.x minor drops in without code changes.
+- A **pre-release** on GitHub is skipped by the `releases/latest` API, so it
+  never triggers an update notice — handy for test builds.
+- The updater only activates on installs already running a version that includes
+  it (2.1.0+). Distribute 2.1.0 via the zip / forum link once; from then on,
+  every newer release auto-updates existing sites.
+- To force a check on a site: **Dashboard → Updates → Check again**, or the
+  plugin's **Check for updates** row action.
