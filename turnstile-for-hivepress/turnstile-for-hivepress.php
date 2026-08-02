@@ -3,14 +3,15 @@
  * Plugin Name: Turnstile for HivePress
  * Plugin URI:  https://community.hivepress.io/
  * Description: Protects HivePress forms with Cloudflare Turnstile, using HivePress's own native captcha field system for full modal and AJAX support.
- * Version:     2.1.0
- * Author:      Chris B @ HivePress Community
+ * Version:     2.1.2
+ * Author:      ChrisB
+ * Author URI:  https://community.hivepress.io/u/chrisb/summary
  * License:     GPLv2 or later
  * Text Domain: turnstile-for-hivepress
- * Domain Path: /languages
+ * Domain Path: /languages/
  *
- * Requires at least: 6.5
- * Requires PHP:      7.2
+ * Requires at least: 5.8
+ * Requires PHP:      7.4
  * Requires Plugins:  simple-cloudflare-turnstile, hivepress
  * Update URI:        https://github.com/irapidchris-del/turnstile-for-hivepress
  *
@@ -24,13 +25,13 @@
  *   2. On hivepress/v1/forms/{form}/meta, flipping that flag to true for any
  *      form the admin selected.
  *   3. On hivepress/v1/forms/{form}, injecting a '_captcha' FIELD into the form
- *      (not footer HTML) — a real HivePress field of type 'captcha' that renders
+ *      (not footer HTML), a real HivePress field of type 'captcha' that renders
  *      <div class="g-recaptcha" data-sitekey="...">.
  *   4. On hivepress/v1/forms/{form}/errors, verifying the token server-side.
  *
  * Because the captcha is a genuine form FIELD rendered inside hp-form__fields,
- * it appears correctly in every context HivePress supports — including the
- * login / register / password modals — with no special handling.
+ * it appears correctly in every context HivePress supports, including the
+ * login / register / password modals, with no special handling.
  *
  * This plugin mirrors that exact pattern, but renders a Cloudflare Turnstile
  * widget instead of Google reCAPTCHA, reusing the Simple Cloudflare Turnstile
@@ -41,50 +42,18 @@
  * skips elements that are hidden at page load, which is the case for modal
  * forms sitting in the footer).
  * ---------------------------------------------------------------------------
+ *
+ * @package TurnstileForHivePress
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'TFHP_VERSION', '2.1.0' );
-define( 'TFHP_FILE',    __FILE__ );
-define( 'TFHP_DIR',     plugin_dir_path( __FILE__ ) );
-define( 'TFHP_URL',     plugin_dir_url( __FILE__ ) );
-
-/**
- * The complete set of HivePress forms that natively support captcha, mapped to
- * the labels HivePress uses in the Protected Forms selector.
- *
- * These are exactly the forms whose class meta includes 'captcha' => false:
- *   Core:        user_login, user_register, user_password_request,
- *                listing_submit, listing_report
- *   Bookings:    booking_confirm
- *   Marketplace: order_dispute
- *   Reviews:     review_submit, review_reply
- *   Messages:    message_send
- *
- * We do not hard-restrict to this list at runtime — instead we honour whatever
- * HivePress itself reports as captcha-capable (see tfhp_get_captcha_forms()),
- * so any future or third-party form that opts into the captcha meta is covered
- * automatically.
- *
- * @return array<string,string>
- */
-function tfhp_known_forms() {
-	return array(
-		'user_login'            => 'Login User',
-		'user_register'         => 'Register User',
-		'user_password_request' => 'Reset Password',
-		'listing_submit'        => 'Submit Listing',
-		'listing_report'        => 'Report Listing',
-		'booking_confirm'       => 'Confirm Booking',
-		'order_dispute'         => 'Dispute Order',
-		'review_submit'         => 'Write a Review',
-		'review_reply'          => 'Reply to Review',
-		'message_send'          => 'Send Message',
-	);
-}
+define( 'TFHP_VERSION', '2.1.2' );
+define( 'TFHP_FILE', __FILE__ );
+define( 'TFHP_DIR', plugin_dir_path( __FILE__ ) );
+define( 'TFHP_URL', plugin_dir_url( __FILE__ ) );
 
 /**
  * Option key storing the array of enabled form names.
@@ -92,7 +61,47 @@ function tfhp_known_forms() {
 define( 'TFHP_OPTION', 'tfhp_protected_forms' );
 
 /**
- * Get the list of forms the admin has chosen to protect.
+ * Gets the known set of HivePress forms that natively support captcha, mapped
+ * to the labels HivePress uses in the Protected Forms selector.
+ *
+ * These are exactly the forms whose class meta includes 'captcha' => false:
+ *   Core:           user_login, user_register, user_password_request,
+ *                   listing_submit, listing_report
+ *   Bookings:       booking_confirm
+ *   Claim Listings: listing_claim_submit
+ *   Marketplace:    order_dispute
+ *   Messages:       message_send
+ *   Requests:       request_submit, offer_make
+ *   Reviews:        review_submit, review_reply
+ *
+ * We do not hard-restrict to this list at runtime. Instead we honour whatever
+ * HivePress itself reports as captcha-capable (see tfhp_get_captcha_forms()),
+ * so any future or third-party form that opts into the captcha meta is covered
+ * automatically; this list is only the fallback when HivePress cannot be
+ * queried yet.
+ *
+ * @return array<string,string>
+ */
+function tfhp_known_forms() {
+	return array(
+		'user_login'            => __( 'Login User', 'turnstile-for-hivepress' ),
+		'user_register'         => __( 'Register User', 'turnstile-for-hivepress' ),
+		'user_password_request' => __( 'Reset Password', 'turnstile-for-hivepress' ),
+		'listing_submit'        => __( 'Submit Listing', 'turnstile-for-hivepress' ),
+		'listing_report'        => __( 'Report Listing', 'turnstile-for-hivepress' ),
+		'listing_claim_submit'  => __( 'Claim Listing', 'turnstile-for-hivepress' ),
+		'booking_confirm'       => __( 'Confirm Booking', 'turnstile-for-hivepress' ),
+		'order_dispute'         => __( 'Dispute Order', 'turnstile-for-hivepress' ),
+		'request_submit'        => __( 'Submit Request', 'turnstile-for-hivepress' ),
+		'offer_make'            => __( 'Submit Offer', 'turnstile-for-hivepress' ),
+		'review_submit'         => __( 'Write a Review', 'turnstile-for-hivepress' ),
+		'review_reply'          => __( 'Reply to Review', 'turnstile-for-hivepress' ),
+		'message_send'          => __( 'Send Message', 'turnstile-for-hivepress' ),
+	);
+}
+
+/**
+ * Gets the list of forms the admin has chosen to protect.
  *
  * @return string[]
  */
@@ -102,16 +111,16 @@ function tfhp_protected_forms() {
 }
 
 /**
- * Whether a specific form is protected.
+ * Checks whether a specific form is protected.
  *
- * @param string $form_name
+ * @param string $form_name Form name, e.g. 'user_login'.
  * @return bool
  */
 function tfhp_is_protected( $form_name ) {
 	return in_array( $form_name, tfhp_protected_forms(), true );
 }
 
-/* --------------------------------------------------------------------------
+/*
  * Load modules.
  *
  * These are required at main-file scope (not inside a plugins_loaded hook)
@@ -123,7 +132,7 @@ function tfhp_is_protected( $form_name ) {
  * The modules only DEFINE functions and REGISTER hooks at load time; every
  * hook callback guards its own dependencies (tfhp_keys_ready(), class_exists,
  * function_exists) so nothing runs before HivePress / SCT are actually ready.
- * ----------------------------------------------------------------------- */
+ */
 
 require_once TFHP_DIR . 'inc/captcha.php';
 
@@ -131,32 +140,31 @@ if ( is_admin() ) {
 	require_once TFHP_DIR . 'inc/admin.php';
 }
 
-/* --------------------------------------------------------------------------
+/*
  * GitHub-powered updates.
  *
  * Library-free: uses WordPress's native update_plugins_{$hostname} filter
  * (WP 5.8+), keyed off the "Update URI" header above, to surface new versions
  * from this plugin's GitHub Releases on the Plugins screen. Loaded on every
  * request (not just admin) because update checks also run during wp-cron.
- * See inc/updater.php and RELEASING.md.
- * ----------------------------------------------------------------------- */
+ */
 
 require_once TFHP_DIR . 'inc/updater.php';
 
-/* --------------------------------------------------------------------------
- * Translations.
- * ----------------------------------------------------------------------- */
-
-add_action( 'init', 'tfhp_load_textdomain' );
-function tfhp_load_textdomain() {
-	load_plugin_textdomain( 'turnstile-for-hivepress', false, dirname( plugin_basename( TFHP_FILE ) ) . '/languages' );
-}
-
-/* --------------------------------------------------------------------------
- * Dependency notices (checked once everything is loaded).
- * ----------------------------------------------------------------------- */
+/*
+ * Translations load through WordPress's just-in-time loader from the Text
+ * Domain and Domain Path headers alone: users translate into
+ * wp-content/languages/plugins/ (Loco Translate's "System" location). This is
+ * the exact pattern of HivePress core and every official extension; none of
+ * them calls load_plugin_textdomain(), and a bundled .mo inside the plugin
+ * folder would not be auto-loaded anyway.
+ */
 
 add_action( 'plugins_loaded', 'tfhp_check_dependencies', 20 );
+
+/**
+ * Queues admin notices for any missing dependency once all plugins are loaded.
+ */
 function tfhp_check_dependencies() {
 	if ( ! function_exists( 'cfturnstile_check' ) ) {
 		add_action( 'admin_notices', 'tfhp_notice_turnstile' );
@@ -166,10 +174,11 @@ function tfhp_check_dependencies() {
 	}
 }
 
-/* --------------------------------------------------------------------------
- * Admin notices
- * ----------------------------------------------------------------------- */
-
+/**
+ * Prints a dependency admin notice.
+ *
+ * @param string $plugin_link Anchor tag linking to the required plugin.
+ */
 function tfhp_dependency_notice( $plugin_link ) {
 	printf(
 		'<div class="notice notice-error"><p>%s</p></div>',
@@ -190,10 +199,16 @@ function tfhp_dependency_notice( $plugin_link ) {
 	);
 }
 
+/**
+ * Prints the missing Simple Cloudflare Turnstile notice.
+ */
 function tfhp_notice_turnstile() {
 	tfhp_dependency_notice( '<a href="https://wordpress.org/plugins/simple-cloudflare-turnstile/" target="_blank">Simple Cloudflare Turnstile</a>' );
 }
 
+/**
+ * Prints the missing HivePress notice.
+ */
 function tfhp_notice_hivepress() {
 	tfhp_dependency_notice( '<a href="https://wordpress.org/plugins/hivepress/" target="_blank">HivePress</a>' );
 }

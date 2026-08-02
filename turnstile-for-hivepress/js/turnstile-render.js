@@ -1,5 +1,5 @@
 /**
- * Turnstile for HivePress — explicit render + submission lifecycle.
+ * Turnstile for HivePress: explicit render + submission lifecycle.
  *
  * The hard problem this solves: HivePress shows login/register/reset-password
  * forms inside FancyBox modals. FancyBox opens an inline modal with
@@ -39,6 +39,13 @@
 
 	/* ---- API readiness ------------------------------------------------- */
 
+	// Set once the polling budget (~15s) is spent without api.js appearing,
+	// e.g. Cloudflare is unreachable or the script was blocked. The submit
+	// gate stands down at that point so forms are not bricked: submissions go
+	// through to the server, which remains the authority (it rejects missing
+	// tokens unless SCT's failsafe allows them).
+	var apiFailed = false;
+
 	function apiReady() {
 		return typeof window.turnstile !== 'undefined' &&
 			typeof window.turnstile.render === 'function';
@@ -48,8 +55,9 @@
 		if (apiReady()) { cb(); return; }
 		var tries = 0;
 		(function poll() {
-			if (apiReady()) { cb(); }
+			if (apiReady()) { apiFailed = false; cb(); }
 			else if (tries++ < 200) { setTimeout(poll, 75); }
+			else { apiFailed = true; }
 		})();
 	}
 
@@ -82,15 +90,51 @@
 
 		var cbName = el.getAttribute('data-callback');
 		params.callback = function (token) {
+			clearWidgetError(el);
 			if (cbName && typeof window[cbName] === 'function') {
 				try { window[cbName](token); } catch (e) {}
 			}
 		};
-		var errName = el.getAttribute('data-error-callback');
-		if (errName && typeof window[errName] === 'function') {
-			params['error-callback'] = window[errName];
+
+		// SCT's "failure message" feature: the text arrives on the widget
+		// (data-failure-message, plain text) and is shown below it when
+		// Turnstile reports an error, cleared again on success.
+		var failureMessage = el.getAttribute('data-failure-message');
+		if (failureMessage) {
+			params['error-callback'] = function () {
+				showWidgetError(el, failureMessage);
+			};
 		}
 		return params;
+	}
+
+	/* ---- widget-level failure message ----------------------------------- */
+
+	function findWidgetError(el) {
+		var next = el.nextElementSibling;
+		return (next && next.classList.contains('tfhp-turnstile-error')) ? next : null;
+	}
+
+	function showWidgetError(el, message) {
+		var note = findWidgetError(el);
+		if (!note) {
+			note = document.createElement('div');
+			note.className = 'tfhp-turnstile-error';
+			note.style.color = '#b32d2e';
+			note.style.fontSize = '0.875em';
+			note.style.marginTop = '6px';
+			if (el.parentNode) {
+				el.parentNode.insertBefore(note, el.nextSibling);
+			}
+		}
+		note.textContent = message;
+	}
+
+	function clearWidgetError(el) {
+		var note = findWidgetError(el);
+		if (note && note.parentNode) {
+			note.parentNode.removeChild(note);
+		}
 	}
 
 	/* ---- render / reset / remove --------------------------------------- */
@@ -135,6 +179,7 @@
 		delete el.dataset[RENDER_FLAG];
 		delete el.dataset[WIDGET_ID];
 		el.innerHTML = '';
+		clearWidgetError(el);
 	}
 
 	/* ---- page (non-modal) widgets -------------------------------------- */
@@ -176,18 +221,42 @@
 		return !!(input && input.value && input.value.length > 0);
 	}
 
+	// Show the "please verify" message in the form's own messages container,
+	// mirroring how HivePress renders its error responses there. Core clears
+	// the container at the start of its next (unblocked) submit run.
+	function showBlockedMessage(form) {
+		var container = form.querySelector('.hp-form__messages');
+		if (!container) { return; }
+
+		var message = (window.tfhpTurnstileData && window.tfhpTurnstileData.blockedMessage) ||
+			'Please verify that you are human.';
+
+		container.textContent = '';
+		var div = document.createElement('div');
+		div.textContent = message;
+		container.appendChild(div);
+		container.classList.add('hp-form__messages--error');
+		container.style.display = 'block';
+	}
+
 	function gateForm(form) {
 		if (!form || form.dataset[GATED_FLAG] === '1') { return; }
 		form.dataset[GATED_FLAG] = '1';
 
 		form.addEventListener('submit', function (e) {
 			if (!form.querySelector('.tfhp-turnstile')) { return; }
+			// The Turnstile API never loaded (blocked or Cloudflare down):
+			// stand down and let the server decide, instead of bricking the
+			// form for the whole outage.
+			if (apiFailed && !hasToken(form)) { return; }
 			if (!hasToken(form)) {
 				e.preventDefault();
 				e.stopImmediatePropagation();
-				// Nudge the widget for this form to render.
+				// Nudge the widget for this form to render, and tell the user
+				// why nothing was submitted.
 				var w = form.querySelector('.tfhp-turnstile');
 				if (w) { renderWidget(w); }
+				showBlockedMessage(form);
 				var btn = form.querySelector('button[type="submit"], input[type="submit"]');
 				if (btn) { btn.disabled = false; btn.removeAttribute('data-state'); }
 			}
@@ -216,6 +285,7 @@
 		delete el.dataset[RENDER_FLAG];
 		delete el.dataset[WIDGET_ID];
 		el.innerHTML = '';
+		clearWidgetError(el);
 	}
 
 	function renderOpenModal($content) {

@@ -29,20 +29,37 @@ define( 'TFHP_UPDATE_CACHE_KEY', 'tfhp_github_release' );
 /**
  * Gets the latest GitHub release details, cached for 6 hours.
  *
+ * The result always carries a 'status' key:
+ *   'ok'          a usable release exists (version, package, url, notes, published)
+ *   'unusable'    GitHub answered but the latest release has no zip asset or no tag
+ *   'unreachable' GitHub could not be reached or answered with an error
+ *
  * @param bool $force Bypass the cache.
- * @return array<string, string>|null
+ * @return array<string, string>
  */
 function tfhp_get_latest_release( $force = false ) {
 	$release = $force ? false : get_site_transient( TFHP_UPDATE_CACHE_KEY );
 
-	if ( ! is_array( $release ) ) {
+	// The status key also invalidates caches written by older plugin versions,
+	// which stored a different shape under the same transient name.
+	if ( ! is_array( $release ) || ! isset( $release['status'] ) ) {
 		$release = tfhp_fetch_latest_release();
 
 		// Failures are cached briefly so the API is not queried repeatedly.
-		set_site_transient( TFHP_UPDATE_CACHE_KEY, $release, $release ? 6 * HOUR_IN_SECONDS : HOUR_IN_SECONDS );
+		set_site_transient( TFHP_UPDATE_CACHE_KEY, $release, 'ok' === $release['status'] ? 6 * HOUR_IN_SECONDS : HOUR_IN_SECONDS );
 	}
 
-	return $release ? $release : null;
+	return $release;
+}
+
+/**
+ * Whether a release lookup result offers an installable package.
+ *
+ * @param array<string, string> $release Release details.
+ * @return bool
+ */
+function tfhp_release_usable( $release ) {
+	return is_array( $release ) && isset( $release['status'] ) && 'ok' === $release['status'];
 }
 
 /**
@@ -63,21 +80,17 @@ function tfhp_fetch_latest_release() {
 	);
 
 	if ( is_wp_error( $response ) || 200 !== wp_remote_retrieve_response_code( $response ) ) {
-		return array();
+		return array( 'status' => 'unreachable' );
 	}
 
 	$data = json_decode( wp_remote_retrieve_body( $response ), true );
 
 	if ( ! is_array( $data ) ) {
-		return array();
+		return array( 'status' => 'unreachable' );
 	}
 
 	// The version is read from the release tag, with or without a "v" prefix.
 	$version = ltrim( (string) ( isset( $data['tag_name'] ) ? $data['tag_name'] : '' ), 'vV' );
-
-	if ( ! $version ) {
-		return array();
-	}
 
 	// The update package is the first release asset named `*.zip`.
 	$package = '';
@@ -92,11 +105,12 @@ function tfhp_fetch_latest_release() {
 		}
 	}
 
-	if ( ! $package ) {
-		return array();
+	if ( ! $version || ! $package ) {
+		return array( 'status' => 'unusable' );
 	}
 
 	return array(
+		'status'    => 'ok',
 		'version'   => $version,
 		'package'   => $package,
 		'url'       => (string) ( isset( $data['html_url'] ) ? $data['html_url'] : 'https://github.com/' . TFHP_UPDATE_REPO ),
@@ -124,7 +138,7 @@ function tfhp_check_for_update( $update, $plugin_data, $plugin_file ) {
 
 	$release = tfhp_get_latest_release();
 
-	if ( ! $release ) {
+	if ( ! tfhp_release_usable( $release ) ) {
 		return $update;
 	}
 
@@ -157,7 +171,7 @@ function tfhp_get_plugin_information( $result, $action, $args ) {
 
 	$release = tfhp_get_latest_release();
 
-	if ( ! $release ) {
+	if ( ! tfhp_release_usable( $release ) ) {
 		return $result;
 	}
 
@@ -229,8 +243,10 @@ function tfhp_handle_update_check() {
 
 	$status = 'none';
 
-	if ( ! $release ) {
+	if ( 'unreachable' === $release['status'] ) {
 		$status = 'error';
+	} elseif ( 'unusable' === $release['status'] ) {
+		$status = 'norelease';
 	} elseif ( version_compare( $release['version'], TFHP_VERSION, '>' ) ) {
 		$status = 'available';
 	}
@@ -247,21 +263,26 @@ add_action( 'admin_init', 'tfhp_handle_update_check' );
  * @return void
  */
 function tfhp_show_update_check_notice() {
+	// phpcs:disable WordPress.Security.NonceVerification.Recommended -- display-only status flag set by our own nonce-guarded redirect; nothing is changed here.
 	if ( ! isset( $_GET['tfhp_checked'] ) || ! current_user_can( 'update_plugins' ) ) {
 		return;
 	}
 
 	$status = sanitize_key( wp_unslash( $_GET['tfhp_checked'] ) );
+	// phpcs:enable WordPress.Security.NonceVerification.Recommended
 
 	if ( 'available' === $status ) {
 		$release = tfhp_get_latest_release();
 
 		/* translators: %s: new version number. */
-		$message = sprintf( __( 'A new version of Turnstile for HivePress (%s) is available.', 'turnstile-for-hivepress' ), $release ? $release['version'] : '' );
+		$message = sprintf( __( 'A new version of Turnstile for HivePress (%s) is available.', 'turnstile-for-hivepress' ), tfhp_release_usable( $release ) ? $release['version'] : '' );
 		$class   = 'notice-success';
 	} elseif ( 'none' === $status ) {
 		$message = __( 'Turnstile for HivePress is up to date.', 'turnstile-for-hivepress' );
 		$class   = 'notice-success';
+	} elseif ( 'norelease' === $status ) {
+		$message = __( 'GitHub was reached, but no installable release was found yet, so no update is available.', 'turnstile-for-hivepress' );
+		$class   = 'notice-warning';
 	} elseif ( 'error' === $status ) {
 		$message = __( 'Could not reach GitHub to check for updates. Please try again later.', 'turnstile-for-hivepress' );
 		$class   = 'notice-error';

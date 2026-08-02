@@ -4,7 +4,7 @@
  *
  * Renders a HivePress section inside the Simple Cloudflare Turnstile settings
  * page (via the cfturnstile-settings-section action) containing a checklist of
- * protectable HivePress forms — mirroring HivePress's own "Protected Forms"
+ * protectable HivePress forms, mirroring HivePress's own "Protected Forms"
  * selector under Settings > Integrations > reCAPTCHA.
  *
  * Saving is handled by piggybacking on the SCT form submission: we hook
@@ -20,8 +20,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-/* --------------------------------------------------------------------------
- * Build the list of protectable forms.
+/**
+ * Builds the list of protectable forms.
  *
  * Preference order:
  *   1. Ask HivePress directly which forms are captcha-capable (any form whose
@@ -29,9 +29,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  *      know about.
  *   2. Fall back to the known static list if HivePress isn't queryable yet.
  *
- * @return array<string,string>  form_name => label
- * ----------------------------------------------------------------------- */
-
+ * @return array<string,string> Form name => label.
+ */
 function tfhp_get_captcha_forms() {
 
 	$forms = array();
@@ -51,6 +50,7 @@ function tfhp_get_captcha_forms() {
 
 				if ( is_array( $meta ) && array_key_exists( 'captcha', $meta ) ) {
 					$label = isset( $meta['label'] ) && $meta['label'] ? $meta['label'] : $form_name;
+
 					$forms[ $form_name ] = $label;
 				}
 			}
@@ -67,12 +67,11 @@ function tfhp_get_captcha_forms() {
 	return $forms;
 }
 
-/* --------------------------------------------------------------------------
- * Render section inside SCT settings page.
- * ----------------------------------------------------------------------- */
-
 add_action( 'cfturnstile-settings-section', 'tfhp_render_settings_section' );
 
+/**
+ * Renders the HivePress accordion inside the SCT settings page.
+ */
 function tfhp_render_settings_section() {
 
 	$forms     = tfhp_get_captcha_forms();
@@ -92,7 +91,7 @@ function tfhp_render_settings_section() {
 
 		<?php if ( get_option( 'hp_recaptcha_site_key' ) && get_option( 'hp_recaptcha_secret_key' ) ) : ?>
 			<p style="margin:10px 0;color:#b32d2e;">
-				<?php esc_html_e( 'Heads up: HivePress\'s built-in reCAPTCHA is also configured (Settings > Integrations). Any form selected in both places will show BOTH captchas and require both to pass. Remove the reCAPTCHA keys there if you want Turnstile only.', 'turnstile-for-hivepress' ); ?>
+				<?php esc_html_e( 'Heads up: HivePress\'s built-in reCAPTCHA is also configured (Settings > Integrations). Every form selected here will show BOTH captchas and require both to pass, even if that form is not ticked in the HivePress settings. Remove the reCAPTCHA keys there if you want Turnstile only.', 'turnstile-for-hivepress' ); ?>
 			</p>
 		<?php endif; ?>
 
@@ -131,9 +130,10 @@ function tfhp_render_settings_section() {
 		<p style="padding:6px 0 4px;font-size:12px;color:#777;">
 			<?php
 			printf(
-				/* translators: %s: version number */
-				esc_html__( 'Turnstile for HivePress v%s — by Chris B @ HivePress Community', 'turnstile-for-hivepress' ),
-				esc_html( TFHP_VERSION )
+				/* translators: 1: version number, 2: author profile link. */
+				esc_html__( 'Turnstile for HivePress v%1$s by %2$s', 'turnstile-for-hivepress' ),
+				esc_html( TFHP_VERSION ),
+				'<a href="https://community.hivepress.io/u/chrisb/summary" target="_blank">ChrisB</a>'
 			);
 			?>
 		</p>
@@ -141,19 +141,19 @@ function tfhp_render_settings_section() {
 	<?php
 }
 
-/* --------------------------------------------------------------------------
- * Save handler — piggyback on the SCT settings form submission.
- * ----------------------------------------------------------------------- */
-
 add_action( 'admin_init', 'tfhp_register_save_hook' );
+
+/**
+ * Attaches the save handler to SCT's always-present key option.
+ */
 function tfhp_register_save_hook() {
 	add_filter( 'sanitize_option_cfturnstile_key', 'tfhp_save_protected_forms' );
 }
 
 /**
- * Persist the selected forms when the SCT settings form is saved.
+ * Persists the selected forms when the SCT settings form is saved.
  *
- * @param  mixed $value  cfturnstile_key value (passed through unchanged).
+ * @param mixed $value The cfturnstile_key value (passed through unchanged).
  * @return mixed
  */
 function tfhp_save_protected_forms( $value ) {
@@ -175,29 +175,52 @@ function tfhp_save_protected_forms( $value ) {
 		return $value;
 	}
 
-	$submitted = isset( $_POST['tfhp_protected_forms'] ) ? (array) $_POST['tfhp_protected_forms'] : array();
-	$clean     = array();
+	$submitted = array();
 
-	foreach ( $submitted as $form_name ) {
-		$form_name = sanitize_key( $form_name );
-		if ( $form_name ) {
-			$clean[] = $form_name;
-		}
+	if ( isset( $_POST['tfhp_protected_forms'] ) ) {
+		$submitted = array_map( 'sanitize_key', (array) wp_unslash( $_POST['tfhp_protected_forms'] ) );
 	}
 
-	update_option( TFHP_OPTION, array_values( array_unique( $clean ) ) );
+	update_option( TFHP_OPTION, array_values( array_unique( array_filter( $submitted ) ) ) );
 
 	return $value;
 }
 
-/* --------------------------------------------------------------------------
- * Remove HivePress from SCT's "Other Integrations" not-installed list.
- * ----------------------------------------------------------------------- */
+/*
+ * Settings quick link on the Plugins screen row.
+ *
+ * The plugin's settings live inside the SCT settings page (the HivePress
+ * accordion), so the link points there.
+ */
+
+add_filter( 'plugin_action_links_' . plugin_basename( TFHP_FILE ), 'tfhp_add_settings_link' );
+
+/**
+ * Adds the Settings quick link to the plugin row.
+ *
+ * @param array $links Plugin action links.
+ * @return array
+ */
+function tfhp_add_settings_link( $links ) {
+	array_unshift(
+		$links,
+		'<a href="' . esc_url( admin_url( 'options-general.php?page=cfturnstile' ) ) . '">' . esc_html__( 'Settings', 'turnstile-for-hivepress' ) . '</a>'
+	);
+
+	return $links;
+}
 
 add_filter( 'cfturnstile-settings-not-installed', 'tfhp_remove_from_not_installed' );
-function tfhp_remove_from_not_installed( $list ) {
+
+/**
+ * Removes HivePress from SCT's "Other Integrations" not-installed list.
+ *
+ * @param array $items Not-installed integration links.
+ * @return array
+ */
+function tfhp_remove_from_not_installed( $items ) {
 	return array_filter(
-		(array) $list,
+		(array) $items,
 		function ( $item ) {
 			return stripos( $item, 'hivepress' ) === false;
 		}

@@ -1,7 +1,7 @@
 # Turnstile for HivePress
 
-**Version:** 2.1.0
-**Author:** Chris B @ HivePress Community
+**Version:** 2.1.2
+**Author:** [ChrisB](https://community.hivepress.io/u/chrisb/summary)
 **License:** GPLv2 or later
 
 Protects HivePress forms with Cloudflare Turnstile, using HivePress's own native captcha field system for full modal and AJAX support.
@@ -15,7 +15,9 @@ Protects HivePress forms with Cloudflare Turnstile, using HivePress's own native
 | [HivePress](https://wordpress.org/plugins/hivepress/) | yes |
 | [Simple Cloudflare Turnstile](https://wordpress.org/plugins/simple-cloudflare-turnstile/) | yes |
 | HivePress Bookings | optional (adds Confirm Booking) |
+| HivePress Claim Listings | optional (adds Claim Listing) |
 | HivePress Marketplace | optional (adds Dispute Order) |
+| HivePress Requests | optional (adds Submit Request / Submit Offer) |
 | HivePress Reviews | optional (adds Write a Review / Reply to Review) |
 | HivePress Messages | optional (adds Send Message) |
 
@@ -46,7 +48,10 @@ automatically. With the common extensions installed the options are:
 | Submit Listing | Core |
 | Report Listing | Core |
 | Confirm Booking | Bookings |
+| Claim Listing | Claim Listings |
 | Dispute Order | Marketplace |
+| Submit Request | Requests |
+| Submit Offer | Requests |
 | Write a Review | Reviews |
 | Reply to Review | Reviews |
 | Send Message | Messages |
@@ -61,14 +66,14 @@ widget instead of Google reCAPTCHA.
 
 For each protected form it uses the same three HivePress hooks core uses:
 
-- `hivepress/v1/forms/{form}/meta` — flips the form's `captcha` meta flag to true.
-- `hivepress/v1/forms/{form}` — injects a real HivePress field of type `turnstile`.
-- `hivepress/v1/forms/{form}/errors` — verifies the token via `cfturnstile_check()`.
+- `hivepress/v1/forms/{form}/meta` - flips the form's `captcha` meta flag to true.
+- `hivepress/v1/forms/{form}` - injects a real HivePress field of type `turnstile`.
+- `hivepress/v1/forms/{form}/errors` - verifies the token via `cfturnstile_check()`.
 
 Because the widget is added as a genuine form **field** (rendered inside
 `hp-form__fields`), rather than as footer HTML, it appears correctly in every
-context HivePress supports — including the login, register and reset-password
-**modal popups** — with no per-modal special-casing.
+context HivePress supports - including the login, register and reset-password
+**modal popups** - with no per-modal special-casing.
 
 The custom field class is declared in HivePress's own `\HivePress\Fields`
 namespace (as `\HivePress\Fields\Turnstile`) so HivePress resolves the field
@@ -84,8 +89,8 @@ renders each widget itself:
 
 - **Page widgets** render as soon as they become visible (IntersectionObserver,
   with a MutationObserver re-scan for AJAX-injected forms).
-- **Modal widgets** render only on FancyBox's `afterShow` — after HivePress has
-  moved the modal's DOM node into the FancyBox overlay — and are torn down on
+- **Modal widgets** render only on FancyBox's `afterShow` - after HivePress has
+  moved the modal's DOM node into the FancyBox overlay - and are torn down on
   close, so every open renders a fresh, working widget.
 - Form submission is gated until a fresh token is present, and widgets are
   reset after each HivePress AJAX submission (tokens are single-use).
@@ -102,11 +107,22 @@ from the Simple Cloudflare Turnstile plugin, so its settings apply automatically
 ### Using HivePress's built-in reCAPTCHA at the same time
 
 HivePress's own reCAPTCHA (Settings → Integrations) and this plugin share
-HivePress's captcha field system. If reCAPTCHA keys are configured AND a form
-is protected by this plugin, that form will show **both** widgets and require
-**both** to pass. If you are migrating to Turnstile, remove the reCAPTCHA keys
-from HivePress settings. A warning is shown in the settings panel when this
+HivePress's captcha field system. If reCAPTCHA keys are configured, **every**
+form protected by this plugin will show **both** widgets and require **both**
+to pass, even when that form is not ticked in HivePress's own Protected Forms
+list (HivePress keys its captcha handling off the shared meta flag this plugin
+flips). If you are migrating to Turnstile, remove the reCAPTCHA keys from
+HivePress settings. A warning is shown in the settings panel when this
 situation is detected.
+
+### Cloudflare outage behaviour
+
+The plugin honours Simple Cloudflare Turnstile's failsafe setting. When the
+failsafe is enabled and Cloudflare is unreachable, protected HivePress forms
+temporarily submit without a challenge, exactly like SCT's own forms. Without
+the failsafe, submissions are rejected until Cloudflare recovers. Client-side,
+the submit gate also stands down if the Turnstile script never loads, so forms
+are never bricked by an outage; the server remains the authority.
 
 ---
 
@@ -114,7 +130,7 @@ situation is detected.
 
 The plugin updates itself from this repository's **GitHub Releases** using
 WordPress's own native update mechanism (the `update_plugins_github.com` filter,
-WP 5.8+, keyed off the plugin's `Update URI` header) — **no third-party library**.
+WP 5.8+, keyed off the plugin's `Update URI` header) - **no third-party library**.
 New versions appear on your **Plugins** screen like any other plugin: update
 notice, "View details" changelog, and one-click update, with no WordPress.org
 listing needed.
@@ -134,9 +150,43 @@ https://github.com/irapidchris-del/turnstile-for-hivepress/releases/latest/downl
 
 ## Changelog
 
+### 2.1.2
+- Translations now load through WordPress's own just-in-time mechanism from the
+  plugin headers, matching HivePress core and every official extension.
+  Translate via Loco Translate into the WordPress languages folder; the bundled
+  template file (.pot) is regenerated with the official WordPress tooling.
+- Full compatibility sweep against every captcha-capable form from all 18
+  HivePress extensions (14 forms), all six official themes, the Social Login
+  extension, and the Autoptimize JS/CSS optimiser.
+
+### 2.1.1
+- The plugin now honours Simple Cloudflare Turnstile's Cloudflare-down
+  failsafe: when it is enabled and Cloudflare is unreachable, protected forms
+  submit without a challenge instead of being blocked for the whole outage.
+  The submit gate also stands down client-side if the Turnstile script never
+  loads, letting the server decide.
+- Submitting a protected form before completing the widget now shows a clear
+  message in the form instead of silently doing nothing.
+- The SCT "failure message" option now works on HivePress forms: the message
+  appears below the widget when Turnstile reports an error and clears on
+  success.
+- Fixed the coexistence warning wording: with HivePress reCAPTCHA keys set,
+  every Turnstile-protected form shows both captchas regardless of the
+  HivePress form selection.
+- The manual update check now distinguishes "GitHub unreachable" from "no
+  installable release published yet".
+- Added Claim Listing, Submit Request and Submit Offer to the documented form
+  list (auto-discovery already found them).
+- Added a Settings quick link on the Plugins screen; script versions now
+  include the file modification time so updates can never serve stale
+  JavaScript from browser caches.
+- Housekeeping: author credit links to the HivePress community profile,
+  WordPress/PHP requirement headers corrected, uninstall also removes the
+  cached release lookup.
+
 ### 2.1.0
 - Added self-updating from GitHub Releases using WordPress's native
-  `update_plugins_github.com` filter (WP 5.8+) — no third-party library. New
+  `update_plugins_github.com` filter (WP 5.8+) - no third-party library. New
   versions show on the Plugins screen with update notifications, a "View details"
   changelog, one-click updates, and a "Check for updates" row action.
 - Updates install a fixed-name release asset built with a version-less top
@@ -150,7 +200,7 @@ https://github.com/irapidchris-del/turnstile-for-hivepress/releases/latest/downl
   field class contract, settings hooks, option names and verification API).
 - Removed the `cf-turnstile` class from the widget container. When SCT loads
   its own auto-render copy of the Cloudflare API on the same page (e.g. for
-  the comment form), it auto-renders every `.cf-turnstile` element — including
+  the comment form), it auto-renders every `.cf-turnstile` element - including
   our hidden modal widgets, breaking them. Our widgets are rendered explicitly
   via `.tfhp-turnstile` and no longer need (or want) Cloudflare's class name.
 - If both this plugin's and SCT's copies of the Cloudflare API end up on the
@@ -191,7 +241,7 @@ https://github.com/irapidchris-del/turnstile-for-hivepress/releases/latest/downl
 
 ### 2.0.5
 - Fixed a fatal JS error ("':submit' is not a valid selector") that crashed the
-  submit handler — :submit is a jQuery-only selector and is invalid in native
+  submit handler - :submit is a jQuery-only selector and is invalid in native
   querySelector. This was breaking the submit-gating and token handling.
 - Stopped the Turnstile "postMessage origin" errors by (a) debouncing the
   DOM observer so the widget no longer renders during a modal's open animation,
@@ -229,7 +279,7 @@ https://github.com/irapidchris-del/turnstile-for-hivepress/releases/latest/downl
   Turnstile widget is now reset after every HivePress form submission so a fresh,
   single-use token is issued for the next attempt (tokens are consumed on
   verification, so a stale token was being re-sent on retries).
-- Removed turnstile.ready() — it is incompatible with async/defer loading of
+- Removed turnstile.ready() - it is incompatible with async/defer loading of
   api.js (enforced by JS-optimisation plugins like FlyingPress). The widget now
   polls for the API and calls turnstile.render() directly, which is defer-safe.
 - Loads the Cloudflare API under a dedicated handle in explicit mode and excludes

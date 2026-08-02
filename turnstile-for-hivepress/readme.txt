@@ -1,9 +1,9 @@
 === Turnstile for HivePress ===
 Tags: hivepress, cloudflare, turnstile, captcha, spam
-Requires at least: 6.5
+Requires at least: 5.8
 Tested up to: 7.0
-Requires PHP: 7.2
-Stable tag: 2.1.0
+Requires PHP: 7.4
+Stable tag: 2.1.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -11,9 +11,9 @@ Protects HivePress forms with Cloudflare Turnstile, using HivePress's own native
 
 == Description ==
 
-Turnstile for HivePress adds a Cloudflare Turnstile widget to the HivePress forms you choose — including the login, register and reset-password **modal popups** — and verifies the token server-side on every submission.
+Turnstile for HivePress adds a Cloudflare Turnstile widget to the HivePress forms you choose, including the login, register and reset-password **modal popups**, and verifies the token server-side on every submission.
 
-It mirrors HivePress's own reCAPTCHA integration (the same three form filters core uses), so the widget is a genuine HivePress form field rather than injected HTML. All keys and widget settings (theme, language, size, appearance) come from the Simple Cloudflare Turnstile plugin, so its configuration applies automatically.
+It mirrors HivePress's own reCAPTCHA integration (the same three form filters core uses), so the widget is a genuine HivePress form field rather than injected HTML. All keys and widget settings (theme, language, size, appearance, failure message, whitelist, failsafe) come from the Simple Cloudflare Turnstile plugin, so its configuration applies automatically.
 
 **Requires both:**
 
@@ -23,7 +23,8 @@ It mirrors HivePress's own reCAPTCHA integration (the same three form filters co
 **Protectable forms** (auto-discovered from HivePress, so captcha-capable forms from any extension appear automatically):
 
 * Login User, Register User, Reset Password, Submit Listing, Report Listing (core)
-* Confirm Booking (Bookings), Dispute Order (Marketplace)
+* Confirm Booking (Bookings), Claim Listing (Claim Listings), Dispute Order (Marketplace)
+* Submit Request, Submit Offer (Requests)
 * Write a Review, Reply to Review (Reviews), Send Message (Messages)
 
 == Installation ==
@@ -38,24 +39,42 @@ It mirrors HivePress's own reCAPTCHA integration (the same three form filters co
 
 = The widget does not appear on my site =
 
-If you use a caching or JS-optimisation plugin (FlyingPress, Perfmatters, WP Rocket, ...), add these keywords to its "Exclude from Delay/Defer JavaScript" list: `challenges.cloudflare.com`, `turnstile-render.js`. The plugin registers exclusion filters for these plugins automatically, but some setups still need the manual entries.
+If you use a caching or JS-optimisation plugin (FlyingPress, Perfmatters, WP Rocket and similar), add these keywords to its "Exclude from Delay/Defer JavaScript" list: `challenges.cloudflare.com`, `turnstile-render.js`. The plugin registers exclusion filters for these plugins automatically, but some setups still need the manual entries.
 
 = Can I use it together with HivePress's built-in reCAPTCHA? =
 
-Both share HivePress's captcha field system. If HivePress reCAPTCHA keys are configured, any form protected by this plugin will show BOTH widgets and require both to pass. If you are migrating to Turnstile, remove the reCAPTCHA keys from HivePress settings. The settings panel shows a warning when this situation is detected.
+Both share HivePress's captcha field system. If HivePress reCAPTCHA keys are configured, every form protected by this plugin will show BOTH widgets and require both to pass, even when that form is not ticked under HivePress Settings → Integrations. If you are migrating to Turnstile, remove the reCAPTCHA keys from the HivePress settings. The settings panel shows a warning when this situation is detected.
 
 = Does it work in the login / register / reset-password popups? =
 
 Yes. The widget is added as a real HivePress form field and rendered only after the modal has finished opening, so it works reliably in the FancyBox popups, including when switching between login, register and reset password.
 
+= What happens if Cloudflare itself is down? =
+
+The plugin honours Simple Cloudflare Turnstile's failsafe setting. With the failsafe enabled, protected HivePress forms temporarily submit without a challenge while Cloudflare is unreachable, exactly like SCT's own forms. Without the failsafe, submissions are rejected until Cloudflare recovers.
+
 = How does the plugin get updates? =
 
-It updates itself from its GitHub Releases using WordPress's native update mechanism (the update_plugins_github.com filter, WP 5.8+) — no third-party library. New versions appear on your Plugins screen with an update notice, a "View details" changelog, and one-click update, just like any other plugin. WordPress checks automatically; you can force a check via Dashboard → Updates → Check again, or the plugin's "Check for updates" link.
+It updates itself from its GitHub Releases using WordPress's native update mechanism (the update_plugins_github.com filter, WP 5.8+), with no third-party library. New versions appear on your Plugins screen with an update notice, a "View details" changelog, and one-click update, just like any other plugin. WordPress checks automatically; you can force a check via Dashboard → Updates → Check again, or the plugin's "Check for updates" link.
 
 == Changelog ==
 
+= 2.1.2 =
+* Translations now load through WordPress's own just-in-time mechanism from the plugin headers, matching HivePress core and every official extension. Translate via Loco Translate into the WordPress languages folder; the bundled template file (.pot) is regenerated with the official WordPress tooling.
+* Full compatibility sweep against every captcha-capable form from all 18 HivePress extensions (14 forms), all six official themes, the Social Login extension, and the Autoptimize JS/CSS optimiser.
+
+= 2.1.1 =
+* The plugin now honours Simple Cloudflare Turnstile's Cloudflare-down failsafe: when it is enabled and Cloudflare is unreachable, protected forms submit without a challenge instead of being blocked for the whole outage. The submit gate also stands down client-side if the Turnstile script never loads, letting the server decide.
+* Submitting a protected form before completing the widget now shows a clear message in the form instead of silently doing nothing.
+* The SCT "failure message" option now works on HivePress forms: the message appears below the widget when Turnstile reports an error and clears on success.
+* Fixed the coexistence warning wording: with HivePress reCAPTCHA keys set, every Turnstile-protected form shows both captchas regardless of the HivePress form selection.
+* The manual update check now distinguishes "GitHub unreachable" from "no installable release published yet".
+* Added Claim Listing, Submit Request and Submit Offer to the documented form list (auto-discovery already found them).
+* Added a Settings quick link on the Plugins screen; script versions now include the file modification time so updates can never serve stale JavaScript from browser caches.
+* Housekeeping: author credit links to the HivePress community profile, WordPress/PHP requirement headers corrected, uninstall also removes the cached release lookup.
+
 = 2.1.0 =
-* Added self-updating from GitHub Releases using WordPress's native update_plugins_github.com filter (WP 5.8+) — no third-party library. Update notifications, "View details" changelog, one-click updates, and a "Check for updates" link on the Plugins screen.
+* Added self-updating from GitHub Releases using WordPress's native update_plugins_github.com filter (WP 5.8+), with no third-party library. Update notifications, "View details" changelog, one-click updates, and a "Check for updates" link on the Plugins screen.
 * Updates install a fixed-name release asset with a version-less top folder, so WordPress always installs into the correct directory.
 * Added a GitHub Actions workflow that builds and attaches the release asset automatically.
 

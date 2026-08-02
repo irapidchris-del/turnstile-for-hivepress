@@ -13,3 +13,4 @@ if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 }
 
 delete_option( 'tfhp_protected_forms' );
+delete_site_transient( 'tfhp_github_release' );

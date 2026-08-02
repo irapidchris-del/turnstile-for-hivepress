@@ -1,68 +1,178 @@
-# Copyright (C) 2026 Chris B @ HivePress Community
+# Copyright (C) 2026 ChrisB
 # This file is distributed under the GPLv2 or later.
 msgid ""
 msgstr ""
-"Project-Id-Version: Turnstile for HivePress 2.0.8\n"
-"Report-Msgid-Bugs-To: https://community.hivepress.io/\n"
-"POT-Creation-Date: 2026-07-22 12:00+0000\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Project-Id-Version: Turnstile for HivePress 2.1.2\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/turnstile-for-hivepress\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2026-08-02T13:14:17+00:00\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: turnstile-for-hivepress\n"
 
 #. Plugin Name of the plugin
+#: turnstile-for-hivepress.php
 msgid "Turnstile for HivePress"
 msgstr ""
 
+#. Plugin URI of the plugin
+#: turnstile-for-hivepress.php
+msgid "https://community.hivepress.io/"
+msgstr ""
+
 #. Description of the plugin
+#: turnstile-for-hivepress.php
 msgid "Protects HivePress forms with Cloudflare Turnstile, using HivePress's own native captcha field system for full modal and AJAX support."
 msgstr ""
 
 #. Author of the plugin
-msgid "Chris B @ HivePress Community"
+#: turnstile-for-hivepress.php
+msgid "ChrisB"
 msgstr ""
 
-#. translators: %s: link to the required plugin
-#: turnstile-for-hivepress.php:166
-msgid "<strong>Turnstile for HivePress</strong> requires the %s plugin to be installed and active."
+#. Author URI of the plugin
+#: turnstile-for-hivepress.php
+msgid "https://community.hivepress.io/u/chrisb/summary"
 msgstr ""
 
-#: inc/captcha.php:135
-msgid "Captcha verification failed. Please try again."
-msgstr ""
-
-#: inc/admin.php:83
+#: inc/admin.php:82
 msgid "HivePress"
 msgstr ""
 
-#: inc/admin.php:89
+#: inc/admin.php:88
 msgid "Enter your Cloudflare Turnstile Site Key and Secret Key above, then save, before selecting forms."
 msgstr ""
 
-#: inc/admin.php:95
-msgid "Heads up: HivePress's built-in reCAPTCHA is also configured (Settings > Integrations). Any form selected in both places will show BOTH captchas and require both to pass. Remove the reCAPTCHA keys there if you want Turnstile only."
+#: inc/admin.php:94
+msgid "Heads up: HivePress's built-in reCAPTCHA is also configured (Settings > Integrations). Every form selected here will show BOTH captchas and require both to pass, even if that form is not ticked in the HivePress settings. Remove the reCAPTCHA keys there if you want Turnstile only."
 msgstr ""
 
-#: inc/admin.php:100
+#: inc/admin.php:99
 msgid "Protected Forms"
 msgstr ""
 
-#: inc/admin.php:103
+#: inc/admin.php:102
 msgid "Select which HivePress forms should display the Turnstile widget. Works on both page forms and modal popups (login, register, reset password)."
 msgstr ""
 
-#: inc/admin.php:126
+#: inc/admin.php:125
 msgid "Using a caching / JS-optimisation plugin?"
 msgstr ""
 
-#: inc/admin.php:127
+#: inc/admin.php:126
 msgid "If the widget does not appear, add these keywords to your plugin's \"Exclude from Delay/Defer JavaScript\" list:"
 msgstr ""
 
-#. translators: %s: version number
-#: inc/admin.php:135
-msgid "Turnstile for HivePress v%s — by Chris B @ HivePress Community"
+#. translators: 1: version number, 2: author profile link.
+#: inc/admin.php:134
+#, php-format
+msgid "Turnstile for HivePress v%1$s by %2$s"
+msgstr ""
+
+#: inc/admin.php:207
+msgid "Settings"
+msgstr ""
+
+#: inc/captcha.php:175
+msgid "Captcha verification failed. Please try again."
+msgstr ""
+
+#: inc/captcha.php:281
+msgid "Please verify that you are human."
+msgstr ""
+
+#: inc/class-turnstile.php:64
+msgid "Failed to verify you are human. Please contact us if you are having issues."
+msgstr ""
+
+#: inc/updater.php:202
+msgid "See the GitHub releases page for the changelog."
+msgstr ""
+
+#: inc/updater.php:216
+msgid "Check for updates"
+msgstr ""
+
+#. translators: %s: new version number.
+#: inc/updater.php:278
+#, php-format
+msgid "A new version of Turnstile for HivePress (%s) is available."
+msgstr ""
+
+#: inc/updater.php:281
+msgid "Turnstile for HivePress is up to date."
+msgstr ""
+
+#: inc/updater.php:284
+msgid "GitHub was reached, but no installable release was found yet, so no update is available."
+msgstr ""
+
+#: inc/updater.php:287
+msgid "Could not reach GitHub to check for updates. Please try again later."
+msgstr ""
+
+#: inc/updater.php:331
+msgid "Could not rename the update directory."
+msgstr ""
+
+#: turnstile-for-hivepress.php:87
+msgid "Login User"
+msgstr ""
+
+#: turnstile-for-hivepress.php:88
+msgid "Register User"
+msgstr ""
+
+#: turnstile-for-hivepress.php:89
+msgid "Reset Password"
+msgstr ""
+
+#: turnstile-for-hivepress.php:90
+msgid "Submit Listing"
+msgstr ""
+
+#: turnstile-for-hivepress.php:91
+msgid "Report Listing"
+msgstr ""
+
+#: turnstile-for-hivepress.php:92
+msgid "Claim Listing"
+msgstr ""
+
+#: turnstile-for-hivepress.php:93
+msgid "Confirm Booking"
+msgstr ""
+
+#: turnstile-for-hivepress.php:94
+msgid "Dispute Order"
+msgstr ""
+
+#: turnstile-for-hivepress.php:95
+msgid "Submit Request"
+msgstr ""
+
+#: turnstile-for-hivepress.php:96
+msgid "Submit Offer"
+msgstr ""
+
+#: turnstile-for-hivepress.php:97
+msgid "Write a Review"
+msgstr ""
+
+#: turnstile-for-hivepress.php:98
+msgid "Reply to Review"
+msgstr ""
+
+#: turnstile-for-hivepress.php:99
+msgid "Send Message"
+msgstr ""
+
+#. translators: %s: link to the required plugin
+#: turnstile-for-hivepress.php:188
+#, php-format
+msgid "<strong>Turnstile for HivePress</strong> requires the %s plugin to be installed and active."
 msgstr ""

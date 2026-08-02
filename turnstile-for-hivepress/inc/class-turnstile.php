@@ -31,12 +31,13 @@ class Turnstile extends Field {
 	protected function boot() {
 
 		// Intentionally NOT using the 'cf-turnstile' class: Cloudflare's api.js
-		// auto-renders every '.cf-turnstile' element when loaded in auto mode,
-		// and the Simple Cloudflare Turnstile plugin loads its own auto-mode
-		// copy of api.js whenever it protects another form on the same page
-		// (comments, CF7, WooCommerce, ...). That auto-render would hit our
-		// widgets too — including ones hidden inside modals — breaking them.
-		// Our own JS renders '.tfhp-turnstile' elements explicitly instead.
+		// auto-renders every '.cf-turnstile' element when any plugin loads it
+		// in auto mode. Current SCT loads it in explicit mode
+		// (simple-cloudflare-turnstile.php cfturnstile_api_url()), but older
+		// SCT versions and other plugins may still load an auto-mode copy on
+		// the same page, and that auto-render would hit our widgets too,
+		// including ones hidden inside modals, breaking them. Our own JS
+		// renders '.tfhp-turnstile' elements explicitly instead.
 		$attributes = array(
 			'class'                => array( 'tfhp-turnstile' ),
 			'data-sitekey'         => get_option( 'cfturnstile_key' ),
@@ -50,8 +51,20 @@ class Turnstile extends Field {
 			'data-refresh-timeout' => get_option( 'cfturnstile_refresh_timeout', 'auto' ),
 		);
 
+		// SCT's "failure message" feature. SCT implements it with an inline
+		// cfturnstileErrorCallback() printed next to its OWN widgets only
+		// (inc/turnstile.php cfturnstile_failed_text()), so that callback is
+		// unusable here. Instead the message text is passed on the widget and
+		// js/turnstile-render.js shows/clears it via Turnstile's error and
+		// success callbacks.
 		if ( get_option( 'cfturnstile_failure_message_enable' ) ) {
-			$attributes['data-error-callback'] = 'cfturnstileErrorCallback';
+			$message = get_option( 'cfturnstile_failure_message' );
+
+			if ( ! is_string( $message ) || '' === trim( $message ) ) {
+				$message = __( 'Failed to verify you are human. Please contact us if you are having issues.', 'turnstile-for-hivepress' );
+			}
+
+			$attributes['data-failure-message'] = wp_strip_all_tags( $message );
 		}
 
 		$this->attributes = hp\merge_arrays( $this->attributes, $attributes );
@@ -62,7 +75,7 @@ class Turnstile extends Field {
 	/**
 	 * Sanitizes field value.
 	 *
-	 * Nothing to sanitize — the Turnstile token is read directly from
+	 * Nothing to sanitize: the Turnstile token is read directly from
 	 * $_POST['cf-turnstile-response'] by cfturnstile_check() during
 	 * server-side validation.
 	 */
