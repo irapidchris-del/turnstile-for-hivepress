@@ -3,7 +3,7 @@ Tags: hivepress, cloudflare, turnstile, captcha, spam
 Requires at least: 5.8
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 2.1.2
+Stable tag: 2.1.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -58,6 +58,9 @@ The plugin honours Simple Cloudflare Turnstile's failsafe setting. With the fail
 It updates itself from its GitHub Releases using WordPress's native update mechanism (the update_plugins_github.com filter, WP 5.8+), with no third-party library. New versions appear on your Plugins screen with an update notice, a "View details" changelog, and one-click update, just like any other plugin. WordPress checks automatically; you can force a check via Dashboard → Updates → Check again, or the plugin's "Check for updates" link.
 
 == Changelog ==
+
+= 2.1.3 =
+* Fixed the widget overflowing narrow modals on small phones. Cloudflare draws the standard widget at a fixed 300px, so inside tight popups (viewports around 350px and below) it ran past the modal edge and clipped. The widget now scales down to fit its container, stays fully interactive, and re-fits on rotation or resize. Verified at 320px, 360px and 390px. Found during the staging pass on a real-device viewport.
 
 = 2.1.2 =
 * Translations now load through WordPress's own just-in-time mechanism from the plugin headers, matching HivePress core and every official extension. Translate via Loco Translate into the WordPress languages folder; the bundled template file (.pot) is regenerated with the official WordPress tooling.

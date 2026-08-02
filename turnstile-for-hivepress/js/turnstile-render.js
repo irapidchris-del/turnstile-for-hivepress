@@ -139,6 +139,38 @@
 
 	/* ---- render / reset / remove --------------------------------------- */
 
+	// Turnstile's widget is a fixed-width box (300px for the 'normal' size)
+	// that does not shrink with its container, so in tight modals on narrow
+	// phones it overflows the form and clips at the modal edge (proven at
+	// 320px viewports, where the container is ~228px). When the container is
+	// narrower than the widget, scale the widget down to fit; a CSS transform
+	// keeps the iframe fully interactive. The page-level scrollWidth stays
+	// clean either way because modals clip internally, so this must run on
+	// every render and on resize, not only when overflow is externally
+	// measurable.
+	function fitWidget(el) {
+		el.style.transform = '';
+		el.style.transformOrigin = '';
+		el.style.height = '';
+
+		var natural = el.scrollWidth;
+		var avail = el.clientWidth;
+
+		if (!natural || !avail || avail >= natural) { return; }
+
+		var scale = avail / natural;
+		el.style.transform = 'scale(' + scale + ')';
+		el.style.transformOrigin = '0 0';
+		el.style.height = Math.ceil(el.offsetHeight * scale) + 'px';
+	}
+
+	function fitAllWidgets() {
+		var widgets = document.querySelectorAll('.tfhp-turnstile');
+		for (var i = 0; i < widgets.length; i++) {
+			if (widgets[i].dataset[RENDER_FLAG] === '1') { fitWidget(widgets[i]); }
+		}
+	}
+
 	function renderWidget(el) {
 		if (!apiReady() || el.dataset[RENDER_FLAG] === '1') { return; }
 		if (el.querySelector('iframe') || el.innerHTML.trim() !== '') {
@@ -152,6 +184,11 @@
 			if (id !== undefined && id !== null) {
 				el.dataset[RENDER_FLAG] = '1';
 				el.dataset[WIDGET_ID] = id;
+				// The iframe lays out asynchronously after render(), so an
+				// immediate fit can measure an empty box; re-fit as it settles.
+				fitWidget(el);
+				setTimeout(function () { fitWidget(el); }, 400);
+				setTimeout(function () { fitWidget(el); }, 1200);
 			}
 		} catch (e) {
 			el.dataset[RENDER_FLAG] = '1';
@@ -179,6 +216,9 @@
 		delete el.dataset[RENDER_FLAG];
 		delete el.dataset[WIDGET_ID];
 		el.innerHTML = '';
+		el.style.transform = '';
+		el.style.transformOrigin = '';
+		el.style.height = '';
 		clearWidgetError(el);
 	}
 
@@ -285,6 +325,9 @@
 		delete el.dataset[RENDER_FLAG];
 		delete el.dataset[WIDGET_ID];
 		el.innerHTML = '';
+		el.style.transform = '';
+		el.style.transformOrigin = '';
+		el.style.height = '';
 		clearWidgetError(el);
 	}
 
@@ -370,6 +413,13 @@
 		if (document.body) {
 			mo.observe(document.body, { childList: true, subtree: true });
 		}
+
+		// Re-fit scaled widgets when the viewport changes (rotation, resize).
+		var fitDebounce = null;
+		window.addEventListener('resize', function () {
+			if (fitDebounce) { clearTimeout(fitDebounce); }
+			fitDebounce = setTimeout(fitAllWidgets, 150);
+		});
 
 		whenJqueryReady();
 	}
