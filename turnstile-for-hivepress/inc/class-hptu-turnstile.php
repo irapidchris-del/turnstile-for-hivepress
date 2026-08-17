@@ -3,8 +3,19 @@
  * Turnstile field.
  *
  * Declared in HivePress's own \HivePress\Fields namespace so that HivePress
- * resolves the field type 'turnstile' to this class (Form::set_fields()
- * instantiates '\HivePress\Fields\' . $type directly).
+ * resolves the field type 'hptu_turnstile' to this class (Form::set_fields()
+ * instantiates '\HivePress\Fields\' . $type directly, and PHP class names are
+ * case-insensitive).
+ *
+ * The Hptu prefix is not decoration. Class names are global, and HivePress
+ * resolves a field type straight to a class name, so an unprefixed
+ * \HivePress\Fields\Turnstile would be claimed by the first party to declare
+ * it. HivePress has publicly said it is considering its own Turnstile
+ * integration; the day core ships one, an unprefixed class here would silently
+ * lose (our loader skips a class that already exists) and every protected form
+ * would render core's widget with core's key instead of the site's Simple
+ * Cloudflare Turnstile configuration. Prefixing makes that collision
+ * impossible.
  *
  * Mirrors \HivePress\Fields\Captcha but renders a Cloudflare Turnstile widget
  * using the Simple Cloudflare Turnstile plugin's configuration.
@@ -23,7 +34,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Cloudflare Turnstile embed, rendered as a HivePress form field.
  */
-class Turnstile extends Field {
+class Hptu_Turnstile extends Field {
 
 	/**
 	 * Bootstraps field properties.

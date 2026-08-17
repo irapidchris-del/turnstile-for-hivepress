@@ -3,7 +3,7 @@ Tags: hivepress, cloudflare, turnstile, captcha, spam
 Requires at least: 5.8
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 2.1.3
+Stable tag: 2.2.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -58,6 +58,13 @@ The plugin honours Simple Cloudflare Turnstile's failsafe setting. With the fail
 It updates itself from its GitHub Releases using WordPress's native update mechanism (the update_plugins_github.com filter, WP 5.8+), with no third-party library. New versions appear on your Plugins screen with an update notice, a "View details" changelog, and one-click update, just like any other plugin. WordPress checks automatically; you can force a check via Dashboard → Updates → Check again, or the plugin's "Check for updates" link.
 
 == Changelog ==
+
+= 2.2.0 =
+* Deleting the plugin now keeps your settings. Your list of protected forms survives a delete and reinstall, and is only erased if you tick the new "Delete all data when this plugin is deleted" box in the HivePress section of the Turnstile settings page. WordPress shows its own warning about deleting data on the delete screen, but it does not apply here unless you tick that box.
+* Renamed the internal captcha field class so it can never clash with HivePress core or a future official extension. HivePress has said it may add its own Turnstile integration, and without this an update to HivePress could have quietly replaced this plugin's widget with a different one.
+* Added a Donate link to the plugin's row on the Plugins screen and to its "View details" popup.
+* Update checks no longer send your site address or WordPress version to GitHub; the request now identifies only the plugin and its version.
+* Corrected the author credit shown on the Plugins screen.
 
 = 2.1.3 =
 * Fixed the widget overflowing narrow modals on small phones. Cloudflare draws the standard widget at a fixed 300px, so inside tight popups (viewports around 350px and below) it ran past the modal edge and clipped. The widget now scales down to fit its container, stays fully interactive, and re-fits on rotation or resize. Verified at 320px, 360px and 390px. Found during the staging pass on a real-device viewport.

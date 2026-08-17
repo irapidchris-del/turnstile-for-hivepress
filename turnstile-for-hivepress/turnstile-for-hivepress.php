@@ -3,8 +3,8 @@
  * Plugin Name: Turnstile for HivePress
  * Plugin URI:  https://community.hivepress.io/
  * Description: Protects HivePress forms with Cloudflare Turnstile, using HivePress's own native captcha field system for full modal and AJAX support.
- * Version:     2.1.3
- * Author:      ChrisB
+ * Version:     2.2.0
+ * Author:      ChrisB @ HivePress Community
  * Author URI:  https://community.hivepress.io/u/chrisb/summary
  * License:     GPLv2 or later
  * Text Domain: turnstile-for-hivepress
@@ -50,7 +50,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'TFHP_VERSION', '2.1.3' );
+define( 'TFHP_VERSION', '2.2.0' );
 define( 'TFHP_FILE', __FILE__ );
 define( 'TFHP_DIR', plugin_dir_path( __FILE__ ) );
 define( 'TFHP_URL', plugin_dir_url( __FILE__ ) );
@@ -59,6 +59,16 @@ define( 'TFHP_URL', plugin_dir_url( __FILE__ ) );
  * Option key storing the array of enabled form names.
  */
 define( 'TFHP_OPTION', 'tfhp_protected_forms' );
+
+/**
+ * Option key storing whether deleting the plugin should erase its data.
+ */
+define( 'TFHP_DELETE_OPTION', 'tfhp_delete_data' );
+
+/**
+ * Where the support link points.
+ */
+define( 'TFHP_DONATE_URL', 'https://ko-fi.com/chrisbathivepresscommunity' );
 
 /**
  * Gets the known set of HivePress forms that natively support captcha, mapped
@@ -118,6 +128,33 @@ function tfhp_protected_forms() {
  */
 function tfhp_is_protected( $form_name ) {
 	return in_array( $form_name, tfhp_protected_forms(), true );
+}
+
+add_filter( 'plugin_row_meta', 'tfhp_add_donate_link', 10, 2 );
+
+/**
+ * Adds the Donate link to the plugin's row on the Plugins screen.
+ *
+ * House placement: this row and the "View details" popup are the only two
+ * places the plugin ever asks, so nothing appears inside its own settings UI.
+ * WordPress joins row-meta items with " | " itself, so a bare anchor is
+ * returned with no separator of its own.
+ *
+ * @param array<string> $links Row meta links.
+ * @param string        $file Plugin file the row belongs to.
+ * @return array<string>
+ */
+function tfhp_add_donate_link( $links, $file ) {
+	if ( plugin_basename( TFHP_FILE ) !== $file ) {
+		return $links;
+	}
+
+	$links[] = '<a href="' . esc_url( TFHP_DONATE_URL ) . '" target="_blank" rel="noopener noreferrer">'
+		. '<span class="dashicons dashicons-star-filled" style="font-size:14px;line-height:1.3;"></span> '
+		. esc_html__( 'Donate', 'turnstile-for-hivepress' )
+		. '</a>';
+
+	return $links;
 }
 
 /*

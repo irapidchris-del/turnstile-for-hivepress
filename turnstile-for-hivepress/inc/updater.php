@@ -71,11 +71,18 @@ function tfhp_release_usable( $release ) {
  * @return array<string, string>
  */
 function tfhp_fetch_latest_release() {
+	// The user-agent is set deliberately. Left out, WordPress fills in
+	// "WordPress/{version}; {site url}" (wp-includes/class-wp-http.php:211),
+	// which would tell GitHub the site's address and its exact WordPress
+	// version on every check. GitHub only requires the header to identify
+	// something, so the plugin identifies itself and nothing else: this
+	// request carries no site or user data at all.
 	$response = wp_remote_get(
 		'https://api.github.com/repos/' . TFHP_UPDATE_REPO . '/releases/latest',
 		array(
-			'timeout' => 10,
-			'headers' => array( 'Accept' => 'application/vnd.github+json' ),
+			'timeout'    => 10,
+			'user-agent' => 'turnstile-for-hivepress/' . TFHP_VERSION,
+			'headers'    => array( 'Accept' => 'application/vnd.github+json' ),
 		)
 	);
 
@@ -197,6 +204,11 @@ function tfhp_get_plugin_information( $result, $action, $args ) {
 		'requires_php'  => $plugin_data['RequiresPHP'],
 		'last_updated'  => $release['published'],
 		'download_link' => $release['package'],
+
+		// WordPress renders this as "Donate to this plugin" in the popup. With
+		// no contributors array returned it appears in the sidebar link list
+		// (wp-admin/includes/plugin-install.php:705-706).
+		'donate_link'   => TFHP_DONATE_URL,
 		'sections'      => array(
 			'description' => wpautop( esc_html( $plugin_data['Description'] ) ),
 			'changelog'   => $release['notes'] ? wpautop( esc_html( $release['notes'] ) ) : '<p>' . esc_html__( 'See the GitHub releases page for the changelog.', 'turnstile-for-hivepress' ) . '</p>',

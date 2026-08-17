@@ -126,7 +126,7 @@ function tfhp_add_captcha_field( $args, $form ) {
 	}
 
 	$args['fields']['_turnstile'] = array(
-		'type'      => 'turnstile',
+		'type'      => 'hptu_turnstile',
 		'_separate' => true,
 		'_order'    => 10000,
 	);
@@ -188,19 +188,19 @@ add_action( 'hivepress/v1/setup', 'tfhp_define_field_class', 5 );
  * \HivePress\Fields\{Type} (see Form::set_fields() ->
  * create_class_instance('\HivePress\Fields\\' . $type)). There is no filter
  * to map a type to an arbitrary class, so the class must literally exist as
- * \HivePress\Fields\Turnstile.
+ * \HivePress\Fields\Hptu_Turnstile.
  *
  * HivePress's autoloader only require()s a core file if it exists and
  * otherwise does nothing, so defining the class ourselves is safe: once
- * declared, class_exists('\HivePress\Fields\Turnstile') returns true and
- * HivePress instantiates it normally.
+ * declared, class_exists() returns true and HivePress instantiates it
+ * normally.
  *
  * We load it on 'hivepress/v1/setup' (fired after core is loaded) so the
  * abstract parent \HivePress\Fields\Field is available to extend.
  */
 function tfhp_define_field_class() {
 
-	if ( class_exists( '\HivePress\Fields\Turnstile' ) ) {
+	if ( class_exists( '\HivePress\Fields\Hptu_Turnstile' ) ) {
 		return;
 	}
 
@@ -209,7 +209,7 @@ function tfhp_define_field_class() {
 		return;
 	}
 
-	require_once TFHP_DIR . 'inc/class-turnstile.php';
+	require_once TFHP_DIR . 'inc/class-hptu-turnstile.php';
 }
 
 add_action( 'wp_enqueue_scripts', 'tfhp_enqueue_scripts' );

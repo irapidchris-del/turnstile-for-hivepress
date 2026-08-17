@@ -1,7 +1,7 @@
 # Turnstile for HivePress
 
-**Version:** 2.1.3
-**Author:** [ChrisB](https://community.hivepress.io/u/chrisb/summary)
+**Version:** 2.2.0
+**Author:** [ChrisB @ HivePress Community](https://community.hivepress.io/u/chrisb/summary)
 **License:** GPLv2 or later
 
 Protects HivePress forms with Cloudflare Turnstile, using HivePress's own native captcha field system for full modal and AJAX support.
@@ -149,6 +149,25 @@ https://github.com/irapidchris-del/turnstile-for-hivepress/releases/latest/downl
 ---
 
 ## Changelog
+
+### 2.2.0
+- Deleting the plugin now keeps your settings. Your list of protected forms
+  survives a delete and reinstall, and is only erased if you tick the new
+  "Delete all data when this plugin is deleted" box in the HivePress section of
+  the Turnstile settings page. WordPress shows its own warning about deleting
+  data on the delete screen, but it does not apply here unless you tick that
+  box.
+- Renamed the internal captcha field class (`\HivePress\Fields\Turnstile` to
+  `\HivePress\Fields\Hptu_Turnstile`, field type `turnstile` to
+  `hptu_turnstile`) so it can never clash with HivePress core or a future
+  official extension. HivePress has said it may add its own Turnstile
+  integration, and without this an update to HivePress could have quietly
+  replaced this plugin's widget with a different one.
+- Added a Donate link to the plugin's row on the Plugins screen and to its
+  "View details" popup.
+- Update checks no longer send your site address or WordPress version to
+  GitHub; the request now identifies only the plugin and its version.
+- Corrected the author credit shown on the Plugins screen.
 
 ### 2.1.3
 - Fixed the widget overflowing narrow modals on small phones. Cloudflare draws

@@ -1,15 +1,15 @@
-# Copyright (C) 2026 ChrisB
+# Copyright (C) 2026 ChrisB @ HivePress Community
 # This file is distributed under the GPLv2 or later.
 msgid ""
 msgstr ""
-"Project-Id-Version: Turnstile for HivePress 2.1.2\n"
+"Project-Id-Version: Turnstile for HivePress 2.2.0\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/turnstile-for-hivepress\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-08-02T13:14:17+00:00\n"
+"POT-Creation-Date: 2026-08-17T17:22:37+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: turnstile-for-hivepress\n"
@@ -31,7 +31,7 @@ msgstr ""
 
 #. Author of the plugin
 #: turnstile-for-hivepress.php
-msgid "ChrisB"
+msgid "ChrisB @ HivePress Community"
 msgstr ""
 
 #. Author URI of the plugin
@@ -67,13 +67,29 @@ msgstr ""
 msgid "If the widget does not appear, add these keywords to your plugin's \"Exclude from Delay/Defer JavaScript\" list:"
 msgstr ""
 
+#: inc/admin.php:144
+msgid "Removing the plugin"
+msgstr ""
+
+#: inc/admin.php:145
+msgid "Your choice of protected forms is kept if you delete this plugin, so you can reinstall it and carry on. WordPress shows its own warning on the delete screen saying the data goes too, but that warning is the same for every plugin and does not apply here unless you tick the box below. Switching the plugin off never removes anything, and your Cloudflare keys and widget settings belong to Simple Cloudflare Turnstile, so they are never touched either way."
+msgstr ""
+
+#: inc/admin.php:156
+msgid "Delete all data when this plugin is deleted"
+msgstr ""
+
+#: inc/admin.php:159
+msgid "Leave this unticked unless you are certain. With it ticked, deleting the plugin also removes your list of protected forms, so every form you had protected would need selecting again after a reinstall. It cannot be undone and nothing asks you to confirm at the time."
+msgstr ""
+
 #. translators: 1: version number, 2: author profile link.
-#: inc/admin.php:134
+#: inc/admin.php:167
 #, php-format
 msgid "Turnstile for HivePress v%1$s by %2$s"
 msgstr ""
 
-#: inc/admin.php:207
+#: inc/admin.php:245
 msgid "Settings"
 msgstr ""
 
@@ -85,94 +101,98 @@ msgstr ""
 msgid "Please verify that you are human."
 msgstr ""
 
-#: inc/class-turnstile.php:64
+#: inc/class-hptu-turnstile.php:75
 msgid "Failed to verify you are human. Please contact us if you are having issues."
 msgstr ""
 
-#: inc/updater.php:202
+#: inc/updater.php:214
 msgid "See the GitHub releases page for the changelog."
 msgstr ""
 
-#: inc/updater.php:216
+#: inc/updater.php:228
 msgid "Check for updates"
 msgstr ""
 
 #. translators: %s: new version number.
-#: inc/updater.php:278
+#: inc/updater.php:290
 #, php-format
 msgid "A new version of Turnstile for HivePress (%s) is available."
 msgstr ""
 
-#: inc/updater.php:281
+#: inc/updater.php:293
 msgid "Turnstile for HivePress is up to date."
 msgstr ""
 
-#: inc/updater.php:284
+#: inc/updater.php:296
 msgid "GitHub was reached, but no installable release was found yet, so no update is available."
 msgstr ""
 
-#: inc/updater.php:287
+#: inc/updater.php:299
 msgid "Could not reach GitHub to check for updates. Please try again later."
 msgstr ""
 
-#: inc/updater.php:331
+#: inc/updater.php:343
 msgid "Could not rename the update directory."
 msgstr ""
 
-#: turnstile-for-hivepress.php:87
+#: turnstile-for-hivepress.php:97
 msgid "Login User"
 msgstr ""
 
-#: turnstile-for-hivepress.php:88
+#: turnstile-for-hivepress.php:98
 msgid "Register User"
 msgstr ""
 
-#: turnstile-for-hivepress.php:89
+#: turnstile-for-hivepress.php:99
 msgid "Reset Password"
 msgstr ""
 
-#: turnstile-for-hivepress.php:90
+#: turnstile-for-hivepress.php:100
 msgid "Submit Listing"
 msgstr ""
 
-#: turnstile-for-hivepress.php:91
+#: turnstile-for-hivepress.php:101
 msgid "Report Listing"
 msgstr ""
 
-#: turnstile-for-hivepress.php:92
+#: turnstile-for-hivepress.php:102
 msgid "Claim Listing"
 msgstr ""
 
-#: turnstile-for-hivepress.php:93
+#: turnstile-for-hivepress.php:103
 msgid "Confirm Booking"
 msgstr ""
 
-#: turnstile-for-hivepress.php:94
+#: turnstile-for-hivepress.php:104
 msgid "Dispute Order"
 msgstr ""
 
-#: turnstile-for-hivepress.php:95
+#: turnstile-for-hivepress.php:105
 msgid "Submit Request"
 msgstr ""
 
-#: turnstile-for-hivepress.php:96
+#: turnstile-for-hivepress.php:106
 msgid "Submit Offer"
 msgstr ""
 
-#: turnstile-for-hivepress.php:97
+#: turnstile-for-hivepress.php:107
 msgid "Write a Review"
 msgstr ""
 
-#: turnstile-for-hivepress.php:98
+#: turnstile-for-hivepress.php:108
 msgid "Reply to Review"
 msgstr ""
 
-#: turnstile-for-hivepress.php:99
+#: turnstile-for-hivepress.php:109
 msgid "Send Message"
 msgstr ""
 
+#: turnstile-for-hivepress.php:154
+msgid "Donate"
+msgstr ""
+
 #. translators: %s: link to the required plugin
-#: turnstile-for-hivepress.php:188
+#: turnstile-for-hivepress.php:225
 #, php-format
 msgid "<strong>Turnstile for HivePress</strong> requires the %s plugin to be installed and active."
 msgstr ""

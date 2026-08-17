@@ -127,6 +127,39 @@ function tfhp_render_settings_section() {
 			<code>challenges.cloudflare.com</code>, <code>turnstile-render.js</code>
 		</p>
 
+		<?php
+		/*
+		 * Removing the plugin. Deliberately last, and in its own block.
+		 *
+		 * The explanation exists to answer the question WordPress itself
+		 * creates: the delete-confirmation screen always prints "(will also
+		 * delete its data)" whenever an uninstall.php is present
+		 * (wp-admin/plugins.php:376-380), whatever that file actually does,
+		 * and ours keeps everything unless this box is ticked. Without a note
+		 * here an owner reads the core warning and reasonably concludes their
+		 * settings are going.
+		 */
+		?>
+		<p style="margin:12px 0 0;font-size:12px;color:#777;border-top:1px solid #eee;padding-top:10px;">
+			<strong><?php esc_html_e( 'Removing the plugin', 'turnstile-for-hivepress' ); ?></strong><br>
+			<?php esc_html_e( 'Your choice of protected forms is kept if you delete this plugin, so you can reinstall it and carry on. WordPress shows its own warning on the delete screen saying the data goes too, but that warning is the same for every plugin and does not apply here unless you tick the box below. Switching the plugin off never removes anything, and your Cloudflare keys and widget settings belong to Simple Cloudflare Turnstile, so they are never touched either way.', 'turnstile-for-hivepress' ); ?>
+		</p>
+
+		<p style="margin:8px 0 0;font-size:12px;color:#777;">
+			<label>
+				<input
+					type="checkbox"
+					name="tfhp_delete_data"
+					value="1"
+					<?php checked( (bool) get_option( TFHP_DELETE_OPTION ) ); ?>
+				>
+				<?php esc_html_e( 'Delete all data when this plugin is deleted', 'turnstile-for-hivepress' ); ?>
+			</label><br>
+			<span style="display:block;margin:4px 0 0 24px;">
+				<?php esc_html_e( 'Leave this unticked unless you are certain. With it ticked, deleting the plugin also removes your list of protected forms, so every form you had protected would need selecting again after a reinstall. It cannot be undone and nothing asks you to confirm at the time.', 'turnstile-for-hivepress' ); ?>
+			</span>
+		</p>
+
 		<p style="padding:6px 0 4px;font-size:12px;color:#777;">
 			<?php
 			printf(
@@ -182,6 +215,11 @@ function tfhp_save_protected_forms( $value ) {
 	}
 
 	update_option( TFHP_OPTION, array_values( array_unique( array_filter( $submitted ) ) ) );
+
+	// An unticked checkbox posts nothing at all, so its absence is what turns
+	// the setting off. Stored as '1' or '' rather than deleted, so the value is
+	// always an explicit choice.
+	update_option( TFHP_DELETE_OPTION, isset( $_POST['tfhp_delete_data'] ) ? '1' : '' );
 
 	return $value;
 }
