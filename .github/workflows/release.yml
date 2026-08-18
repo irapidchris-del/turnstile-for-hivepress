@@ -6,10 +6,10 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Release tag (e.g. v2.1.0)'
+        description: 'Release tag (e.g. v2.2.0)'
         required: true
       notes:
-        description: 'Release notes (Markdown, optional — auto-generated if empty)'
+        description: 'Release notes (Markdown, optional, auto-generated if empty)'
         required: false
         default: ''
 
@@ -22,12 +22,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Builds dist/turnstile-for-hivepress.zip (a single top-level
-      # turnstile-for-hivepress/ folder, no version in the name) from the
-      # nested plugin directory. Same script used for local builds, so the
-      # release asset and a local build are always identical.
+      # The cp lines below are an allowlist. A top-level file or folder missing
+      # here never reaches the zip, and tools/package.ps1 parses these same
+      # lines, so a locally built zip carries exactly these files too.
+      #
+      # The asset name is fixed at turnstile-for-hivepress.zip: forum posts link to
+      # releases/latest/download/turnstile-for-hivepress.zip, so renaming it would break
+      # every published download link.
       - name: Build plugin zip
-        run: bash bin/build.sh
+        run: |
+          mkdir -p build/turnstile-for-hivepress
+          cp turnstile-for-hivepress.php uninstall.php readme.txt LICENSE.txt build/turnstile-for-hivepress/
+          cp -r inc js build/turnstile-for-hivepress/
+          if [ -d languages ]; then cp -r languages build/turnstile-for-hivepress/; fi
+          cd build
+          zip -r turnstile-for-hivepress.zip turnstile-for-hivepress
 
       - name: Create or refresh the release (manual dispatch)
         if: github.event_name == 'workflow_dispatch'
@@ -42,15 +51,15 @@ jobs:
             if [ -n "$NOTES" ]; then
               gh release edit "$TAG" --notes "$NOTES" --repo "$GITHUB_REPOSITORY"
             fi
-            gh release upload "$TAG" dist/turnstile-for-hivepress.zip --clobber --repo "$GITHUB_REPOSITORY"
+            gh release upload "$TAG" build/turnstile-for-hivepress.zip --clobber --repo "$GITHUB_REPOSITORY"
           elif [ -n "$NOTES" ]; then
-            gh release create "$TAG" dist/turnstile-for-hivepress.zip --title "$TAG" --notes "$NOTES" --target "$GITHUB_SHA" --repo "$GITHUB_REPOSITORY"
+            gh release create "$TAG" build/turnstile-for-hivepress.zip --title "$TAG" --notes "$NOTES" --target "$GITHUB_SHA" --repo "$GITHUB_REPOSITORY"
           else
-            gh release create "$TAG" dist/turnstile-for-hivepress.zip --title "$TAG" --generate-notes --target "$GITHUB_SHA" --repo "$GITHUB_REPOSITORY"
+            gh release create "$TAG" build/turnstile-for-hivepress.zip --title "$TAG" --generate-notes --target "$GITHUB_SHA" --repo "$GITHUB_REPOSITORY"
           fi
 
       - name: Upload asset to the release
         if: github.event_name == 'release'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release upload "$GITHUB_REF_NAME" dist/turnstile-for-hivepress.zip --clobber --repo "$GITHUB_REPOSITORY"
+        run: gh release upload "$GITHUB_REF_NAME" build/turnstile-for-hivepress.zip --clobber --repo "$GITHUB_REPOSITORY"
