@@ -3,7 +3,7 @@ Tags: hivepress, cloudflare, turnstile, captcha, spam
 Requires at least: 5.8
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 2.2.0
+Stable tag: 2.2.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -58,6 +58,9 @@ The plugin honours Simple Cloudflare Turnstile's failsafe setting. With the fail
 It updates itself from its GitHub Releases using WordPress's native update mechanism (the update_plugins_github.com filter, WP 5.8+), with no third-party library. New versions appear on your Plugins screen with an update notice, a "View details" changelog, and one-click update, just like any other plugin. WordPress checks automatically; you can force a check via Dashboard → Updates → Check again, or the plugin's "Check for updates" link.
 
 == Changelog ==
+
+= 2.2.1 =
+* Fixed: the plugin's own link on the Plugins screen pointed at the community forum home page rather than the plugin's source.
 
 = 2.2.0 =
 * Deleting the plugin now keeps your settings. Your list of protected forms survives a delete and reinstall, and is only erased if you tick the new "Delete all data when this plugin is deleted" box in the HivePress section of the Turnstile settings page. WordPress shows its own warning about deleting data on the delete screen, but it does not apply here unless you tick that box.
