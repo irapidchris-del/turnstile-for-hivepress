@@ -27,6 +27,18 @@ define( 'TFHP_UPDATE_SLUG', 'turnstile-for-hivepress' );
 define( 'TFHP_UPDATE_CACHE_KEY', 'tfhp_github_release' );
 
 /**
+ * Why the last release check came back empty, so the notice can say which.
+ */
+define( 'TFHP_UPDATE_REASON_KEY', 'tfhp_github_release_reason' );
+
+/**
+ * When GitHub's hourly allowance for this server is expected back. While this is set the
+ * API is not called at all, so a site that has run out does not spend the rest of the
+ * window making requests that can only fail.
+ */
+define( 'TFHP_UPDATE_RATE_LIMIT_KEY', 'tfhp_github_release_rate_limit' );
+
+/**
  * Gets the latest GitHub release details, cached for 6 hours.
  *
  * The result always carries a 'status' key:
@@ -38,14 +50,24 @@ define( 'TFHP_UPDATE_CACHE_KEY', 'tfhp_github_release' );
  * @return array<string, string>
  */
 function tfhp_get_latest_release( $force = false ) {
-	$release = $force ? false : get_site_transient( TFHP_UPDATE_CACHE_KEY );
+	$cached  = get_site_transient( TFHP_UPDATE_CACHE_KEY );
+	$release = $force ? false : $cached;
 
 	// The status key also invalidates caches written by older plugin versions,
 	// which stored a different shape under the same transient name.
 	if ( ! is_array( $release ) || ! isset( $release['status'] ) ) {
 		$release = tfhp_fetch_latest_release();
 
-		// Failures are cached briefly so the API is not queried repeatedly.
+		// A failed check must not erase what the last good one found. Overwriting a usable answer
+		// with a failure state took a genuinely pending update off the Plugins screen for an hour
+		// with nothing to say why.
+		if ( 'ok' !== $release['status'] && tfhp_release_usable( $cached ) ) {
+			set_site_transient( TFHP_UPDATE_CACHE_KEY, $cached, HOUR_IN_SECONDS );
+
+			return $cached;
+		}
+
+		// Failures are cached briefly so the lookup is not repeated on every admin page load.
 		set_site_transient( TFHP_UPDATE_CACHE_KEY, $release, 'ok' === $release['status'] ? 6 * HOUR_IN_SECONDS : HOUR_IN_SECONDS );
 	}
 
@@ -71,29 +93,14 @@ function tfhp_release_usable( $release ) {
  * @return array<string, string>
  */
 function tfhp_fetch_latest_release() {
-	// The user-agent is set deliberately. Left out, WordPress fills in
-	// "WordPress/{version}; {site url}" (wp-includes/class-wp-http.php:211),
-	// which would tell GitHub the site's address and its exact WordPress
-	// version on every check. GitHub only requires the header to identify
-	// something, so the plugin identifies itself and nothing else: this
-	// request carries no site or user data at all.
-	$response = wp_remote_get(
-		'https://api.github.com/repos/' . TFHP_UPDATE_REPO . '/releases/latest',
-		array(
-			'timeout'    => 10,
-			'user-agent' => 'turnstile-for-hivepress/' . TFHP_VERSION,
-			'headers'    => array( 'Accept' => 'application/vnd.github+json' ),
-		)
-	);
-
-	if ( is_wp_error( $response ) || 200 !== wp_remote_retrieve_response_code( $response ) ) {
-		return array( 'status' => 'unreachable' );
-	}
-
-	$data = json_decode( wp_remote_retrieve_body( $response ), true );
+	$data = tfhp_fetch_release_data();
 
 	if ( ! is_array( $data ) ) {
-		return array( 'status' => 'unreachable' );
+
+		// Translate the lookup's reason into this plugin's own status vocabulary.
+		$reason = get_site_transient( TFHP_UPDATE_REASON_KEY );
+
+		return array( 'status' => in_array( $reason, array( 'no_release', 'rate_limited' ), true ) ? $reason : 'unreachable' );
 	}
 
 	// The version is read from the release tag, with or without a "v" prefix.
@@ -124,6 +131,329 @@ function tfhp_fetch_latest_release() {
 		'notes'     => (string) ( isset( $data['body'] ) ? $data['body'] : '' ),
 		'published' => (string) ( isset( $data['published_at'] ) ? $data['published_at'] : '' ),
 	);
+}
+
+/**
+ * Gets the latest release, from github.com in preference to the GitHub API.
+ *
+ * WHY THIS DOES NOT SIMPLY CALL THE API
+ *
+ * Without a token `api.github.com` allows **60 requests an hour per IP address**, and that
+ * allowance is shared by every plugin on the site, by every other site on the same server, and by
+ * anything else calling the API from that address. A site running several of these extensions,
+ * plus a few clicks of "Check for updates" - which deliberately bypasses the cache - spends it
+ * easily; on shared hosting a neighbouring site can spend it alone. GitHub then answers 403, and
+ * reporting that as "could not reach GitHub" sends the owner hunting a network fault that does not
+ * exist. That is the same family of bug as reporting a 404 as unreachable: a refusal is an answer,
+ * not a failure to get one.
+ *
+ * Everything this lookup needs is also published on github.com itself, which carries no such
+ * allowance:
+ *
+ *   - `/releases/latest` answers 302, and the Location header names the release GitHub considers
+ *     latest, with drafts and pre-releases excluded exactly as the API excludes them;
+ *   - `/releases/expanded_assets/{tag}` is the fragment the release page uses to list its own
+ *     downloads, so it names the asset;
+ *   - `/releases.atom` carries the release notes.
+ *
+ * Measured against GitHub's own rate-limit counter on 2026-08-19, thirteen full update checks
+ * through this route moved it by zero. The API is kept as a fallback so that a change at github.com
+ * cannot leave the plugin with no way to check at all.
+ *
+ * @return array<string, mixed>|null Release data in the API's own shape, or null.
+ */
+function tfhp_fetch_release_data() {
+	$site = tfhp_fetch_release_from_site();
+
+	if ( isset( $site['release'] ) ) {
+		delete_site_transient( TFHP_UPDATE_REASON_KEY );
+
+		return $site['release'];
+	}
+
+	// github.com has given a definite answer that nothing is published. Asking the API would only
+	// repeat it, at the cost of one of the sixty.
+	if ( isset( $site['reason'] ) && 'no_release' === $site['reason'] ) {
+		set_site_transient( TFHP_UPDATE_REASON_KEY, 'no_release', HOUR_IN_SECONDS );
+
+		return null;
+	}
+
+	return tfhp_fetch_release_from_api();
+}
+
+/**
+ * Reads the latest release from github.com, without touching the API allowance.
+ *
+ * @return array<string, mixed> Either a `release` in the API's shape, a `reason`, or empty to fall
+ *                              back to the API.
+ */
+function tfhp_fetch_release_from_site() {
+	$base = 'https://github.com/' . TFHP_UPDATE_REPO;
+
+	$response = tfhp_request(
+		$base . '/releases/latest',
+		[
+			// Do not follow it. The redirect target is the answer.
+			'redirection' => 0,
+		]
+	);
+
+	if ( ! $response ) {
+		return [];
+	}
+
+	$code = (int) wp_remote_retrieve_response_code( $response );
+
+	// A repository with nothing published answers 404 here, which is the normal state of a new
+	// repository rather than a fault.
+	if ( 404 === $code ) {
+		return [ 'reason' => 'no_release' ];
+	}
+
+	if ( 301 !== $code && 302 !== $code ) {
+		return [];
+	}
+
+	$location = wp_remote_retrieve_header( $response, 'location' );
+
+	// WordPress hands back an array when a header repeats.
+	if ( is_array( $location ) ) {
+		$location = end( $location );
+	}
+
+	if ( ! preg_match( '#/releases/tag/(.+)$#', (string) $location, $matches ) ) {
+		return [];
+	}
+
+	$tag = rawurldecode( trim( $matches[1] ) );
+
+	$asset = tfhp_fetch_release_asset( $base, $tag );
+
+	// No downloadable asset means there is nothing the updater could install, so let the API have
+	// its say rather than reporting a release that cannot be applied.
+	if ( ! $asset ) {
+		return [];
+	}
+
+	$notes = tfhp_fetch_release_notes( $base, $tag );
+
+	// Shaped exactly like the API's own answer, so everything downstream is identical either way.
+	return [
+		'release' => [
+			'tag_name'     => $tag,
+			'html_url'     => $base . '/releases/tag/' . rawurlencode( $tag ),
+			'body'         => $notes['body'],
+			'published_at' => $notes['published'],
+			'assets'       => [
+				[
+					'name'                 => $asset['name'],
+					'browser_download_url' => $asset['url'],
+				],
+			],
+		],
+	];
+}
+
+/**
+ * Reads a release's asset from the fragment the release page uses to list its own downloads.
+ *
+ * @param string $base Repository URL.
+ * @param string $tag Release tag.
+ * @return array<string, string>|null
+ */
+function tfhp_fetch_release_asset( $base, $tag ) {
+	$response = tfhp_request( $base . '/releases/expanded_assets/' . rawurlencode( $tag ) );
+
+	if ( ! $response || 200 !== (int) wp_remote_retrieve_response_code( $response ) ) {
+		return null;
+	}
+
+	if ( ! preg_match_all( '#href="(/[^"]*/releases/download/[^"]+\.zip)"#i', wp_remote_retrieve_body( $response ), $matches ) ) {
+		return null;
+	}
+
+	// Take the first zip, matching what the API branch does with the assets list.
+	$path = html_entity_decode( $matches[1][0], ENT_QUOTES, 'UTF-8' );
+
+	return [
+		'name' => rawurldecode( basename( $path ) ),
+		'url'  => 'https://github.com' . $path,
+	];
+}
+
+/**
+ * Reads a release's notes and publication date from the releases feed.
+ *
+ * Only the changelog in the plugin details popup depends on this, so a failure here is not fatal.
+ *
+ * @param string $base Repository URL.
+ * @param string $tag Release tag.
+ * @return array<string, string>
+ */
+function tfhp_fetch_release_notes( $base, $tag ) {
+	$empty = [
+		'body'      => '',
+		'published' => '',
+	];
+
+	$response = tfhp_request( $base . '/releases.atom' );
+
+	if ( ! $response || 200 !== (int) wp_remote_retrieve_response_code( $response ) ) {
+		return $empty;
+	}
+
+	if ( ! preg_match_all( '#<entry>(.*?)</entry>#s', wp_remote_retrieve_body( $response ), $entries ) ) {
+		return $empty;
+	}
+
+	foreach ( $entries[1] as $entry ) {
+
+		// Match the tag rather than taking the newest entry: the feed also carries pre-releases,
+		// which the latest-release redirect deliberately skips.
+		if ( false === strpos( $entry, '/releases/tag/' . $tag ) ) {
+			continue;
+		}
+
+		$notes = '';
+
+		if ( preg_match( '#<content[^>]*>(.*?)</content>#s', $entry, $content ) ) {
+			$notes = tfhp_release_notes_to_text( $content[1] );
+		}
+
+		$published = '';
+
+		if ( preg_match( '#<updated>(.*?)</updated>#s', $entry, $updated ) ) {
+			$published = trim( $updated[1] );
+		}
+
+		return [
+			'body'      => $notes,
+			'published' => $published,
+		];
+	}
+
+	return $empty;
+}
+
+/**
+ * Turns the rendered notes in the feed back into the plain text the API would have returned.
+ *
+ * The API hands back the release body as it was written, in Markdown, and the details popup prints
+ * that as text. The feed carries the rendered HTML instead, so headings, bold runs and list items
+ * are put back into their Markdown spelling to keep the popup reading the same either way.
+ *
+ * @param string $html Rendered notes.
+ * @return string
+ */
+function tfhp_release_notes_to_text( $html ) {
+	$text = html_entity_decode( $html, ENT_QUOTES, 'UTF-8' );
+
+	$text = preg_replace( '#<h[1-6][^>]*>(.*?)</h[1-6]>#is', "\n**$1**\n", $text );
+	$text = preg_replace( '#<(strong|b)[^>]*>(.*?)</\1>#is', '**$2**', $text );
+	$text = preg_replace( '#<(em|i)[^>]*>(.*?)</\1>#is', '*$2*', $text );
+	$text = preg_replace( '#<li[^>]*>#i', "\n- ", $text );
+	$text = preg_replace( '#</(p|div|ul|ol|li|pre|blockquote)>#i', "\n", $text );
+	$text = preg_replace( '#<br\s*/?>#i', "\n", $text );
+
+	$text = wp_strip_all_tags( (string) $text );
+
+	// Collapse the blank lines the substitutions leave behind.
+	$text = preg_replace( '#\n{3,}#', "\n\n", (string) $text );
+
+	return trim( (string) $text );
+}
+
+/**
+ * Reads the latest release from the GitHub API.
+ *
+ * Kept as a fallback only. See `tfhp_fetch_release_data()` for why it is not the first choice.
+ *
+ * @return array<string, mixed>|null
+ */
+function tfhp_fetch_release_from_api() {
+
+	// GitHub has already said the allowance is spent, so sit the window out rather than spending it
+	// on requests that can only be refused.
+	if ( get_site_transient( TFHP_UPDATE_RATE_LIMIT_KEY ) ) {
+		set_site_transient( TFHP_UPDATE_REASON_KEY, 'rate_limited', HOUR_IN_SECONDS );
+
+		return null;
+	}
+
+	$response = wp_remote_get(
+		'https://api.github.com/repos/' . TFHP_UPDATE_REPO . '/releases/latest',
+		[
+			'timeout'    => 10,
+			'headers'    => [ 'Accept' => 'application/vnd.github+json' ],
+
+			// Our own User-Agent, because WordPress's default is "WordPress/{version}; {site url}"
+			// (wp-includes/class-wp-http.php:211) and that puts the site's address and its exact
+			// WordPress version into every release check. GitHub only requires that the header
+			// identifies something, so this satisfies it while telling them nothing about the site.
+			'user-agent' => 'turnstile-for-hivepress/' . TFHP_VERSION,
+		]
+	);
+
+	if ( is_wp_error( $response ) ) {
+		set_site_transient( TFHP_UPDATE_REASON_KEY, 'unreachable', HOUR_IN_SECONDS );
+
+		return null;
+	}
+
+	$code = (int) wp_remote_retrieve_response_code( $response );
+
+	if ( 200 !== $code ) {
+		$reason = 404 === $code ? 'no_release' : 'unreachable';
+
+		// A 403 or 429 with nothing left on the counter means this server's hourly allowance is
+		// spent. Nothing is wrong with the site, the plugin or the repository, so it must not be
+		// reported as though something were.
+		if ( ( 403 === $code || 429 === $code ) && '0' === (string) wp_remote_retrieve_header( $response, 'x-ratelimit-remaining' ) ) {
+			$reason = 'rate_limited';
+			$reset  = (int) wp_remote_retrieve_header( $response, 'x-ratelimit-reset' );
+			$wait   = $reset > time() ? min( $reset - time(), HOUR_IN_SECONDS ) : 5 * MINUTE_IN_SECONDS;
+
+			set_site_transient( TFHP_UPDATE_RATE_LIMIT_KEY, $reset ? $reset : time() + $wait, $wait );
+		}
+
+		set_site_transient( TFHP_UPDATE_REASON_KEY, $reason, HOUR_IN_SECONDS );
+
+		return null;
+	}
+
+	delete_site_transient( TFHP_UPDATE_RATE_LIMIT_KEY );
+	delete_site_transient( TFHP_UPDATE_REASON_KEY );
+
+	$data = json_decode( wp_remote_retrieve_body( $response ), true );
+
+	return is_array( $data ) ? $data : null;
+}
+
+/**
+ * Makes a request to github.com.
+ *
+ * The User-Agent is set for the same reason as in the API branch: WordPress's default would put the
+ * site's address and its exact WordPress version into every check.
+ *
+ * @param string               $url Request URL.
+ * @param array<string, mixed> $args Extra request arguments.
+ * @return array<string, mixed>|null
+ */
+function tfhp_request( $url, $args = [] ) {
+	$response = wp_remote_get(
+		$url,
+		array_merge(
+			[
+				'timeout'    => 10,
+				'headers'    => [ 'Accept' => 'text/html, application/xml;q=0.9, */*;q=0.8' ],
+				'user-agent' => 'turnstile-for-hivepress/' . TFHP_VERSION,
+			],
+			$args
+		)
+	);
+
+	return is_wp_error( $response ) ? null : $response;
 }
 
 /**
@@ -255,9 +585,11 @@ function tfhp_handle_update_check() {
 
 	$status = 'none';
 
-	if ( 'unreachable' === $release['status'] ) {
+	if ( 'rate_limited' === $release['status'] ) {
+		$status = 'limited';
+	} elseif ( 'unreachable' === $release['status'] ) {
 		$status = 'error';
-	} elseif ( 'unusable' === $release['status'] ) {
+	} elseif ( in_array( $release['status'], array( 'unusable', 'no_release' ), true ) ) {
 		$status = 'norelease';
 	} elseif ( version_compare( $release['version'], TFHP_VERSION, '>' ) ) {
 		$status = 'available';
@@ -292,6 +624,9 @@ function tfhp_show_update_check_notice() {
 	} elseif ( 'none' === $status ) {
 		$message = __( 'Turnstile for HivePress is up to date.', 'turnstile-for-hivepress' );
 		$class   = 'notice-success';
+	} elseif ( 'limited' === $status ) {
+		$message = __( 'GitHub limits how many update checks one server may make each hour, and this server has reached that limit. Nothing is wrong with the plugin or your site, and checking will work again within the hour.', 'turnstile-for-hivepress' );
+		$class   = 'notice-warning';
 	} elseif ( 'norelease' === $status ) {
 		$message = __( 'GitHub was reached, but no installable release was found yet, so no update is available.', 'turnstile-for-hivepress' );
 		$class   = 'notice-warning';

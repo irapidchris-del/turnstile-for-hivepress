@@ -3,7 +3,7 @@
  * Plugin Name: Turnstile for HivePress
  * Plugin URI:  https://github.com/irapidchris-del/turnstile-for-hivepress
  * Description: Protects HivePress forms with Cloudflare Turnstile, using HivePress's own native captcha field system for full modal and AJAX support.
- * Version:     2.2.1
+ * Version:     2.2.2
  * Author:      ChrisB @ HivePress Community
  * Author URI:  https://community.hivepress.io/u/chrisb/summary
  * License:     GPLv2 or later
@@ -50,7 +50,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'TFHP_VERSION', '2.2.1' );
+define( 'TFHP_VERSION', '2.2.2' );
 define( 'TFHP_FILE', __FILE__ );
 define( 'TFHP_DIR', plugin_dir_path( __FILE__ ) );
 define( 'TFHP_URL', plugin_dir_url( __FILE__ ) );

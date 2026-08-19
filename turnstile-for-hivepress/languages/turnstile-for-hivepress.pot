@@ -196,3 +196,7 @@ msgstr ""
 #, php-format
 msgid "<strong>Turnstile for HivePress</strong> requires the %s plugin to be installed and active."
 msgstr ""
+
+#: inc/updater.php:628
+msgid "GitHub limits how many update checks one server may make each hour, and this server has reached that limit. Nothing is wrong with the plugin or your site, and checking will work again within the hour."
+msgstr ""
