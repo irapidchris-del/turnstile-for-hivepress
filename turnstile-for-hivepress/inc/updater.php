@@ -47,11 +47,28 @@ define( 'TFHP_UPDATE_RATE_LIMIT_KEY', 'tfhp_github_release_rate_limit' );
  *   'unreachable' GitHub could not be reached or answered with an error
  *
  * @param bool $force Bypass the cache.
- * @return array<string, string>
+ * @return array<string, string>|null Null while a background refresh is queued and nothing is cached yet.
  */
 function tfhp_get_latest_release( $force = false ) {
 	$cached  = get_site_transient( TFHP_UPDATE_CACHE_KEY );
 	$release = $force ? false : $cached;
+
+	/*
+	 * A cold cache must not be filled from somebody's page load. WordPress asks every plugin for its
+	 * update details while rendering an admin request, so with several of these installed one such
+	 * request made one blocking call to GitHub after another, in series: a site with nine of them
+	 * measured 18.6 seconds on a settings screen, once, and then behaved perfectly for six hours
+	 * because the answers were cached again. That is the same shape as the listing-save incident, on
+	 * the admin side rather than the public one.
+	 *
+	 * So the fetch moves to a background job and this answers with what is already known. The manual
+	 * Check for updates link still fetches immediately, because there a person is waiting for it.
+	 */
+	if ( ! $force && ( ! is_array( $cached ) || ! isset( $cached['status'] ) ) ) {
+		tfhp_schedule_release_refresh();
+
+		return null;
+	}
 
 	// The status key also invalidates caches written by older plugin versions,
 	// which stored a different shape under the same transient name.
@@ -132,6 +149,47 @@ function tfhp_fetch_latest_release() {
 		'published' => (string) ( isset( $data['published_at'] ) ? $data['published_at'] : '' ),
 	);
 }
+
+/**
+ * Queues a background refresh of the release cache.
+ *
+ * Prefers HivePress's scheduler, which is Action Scheduler and already refuses a duplicate of a job
+ * with the same hook and arguments, so repeated admin requests coalesce into one fetch. WP-Cron is
+ * the fallback for the same reason it exists: it also runs the work outside this request.
+ *
+ * Neither is blocking, so where cron itself is starved the cache simply stays cold and no update is
+ * offered until somebody presses Check for updates, which always fetches at once.
+ *
+ * @return void
+ */
+function tfhp_schedule_release_refresh() {
+	$hook = TFHP_UPDATE_CACHE_KEY . '_refresh';
+
+	// Assigned and then tested: Core defines no __isset(), so isset( hivepress()->x ) is always
+	// false even for a component that is present and working.
+	$scheduler = function_exists( 'hivepress' ) ? hivepress()->scheduler : null;
+
+	if ( $scheduler ) {
+		$scheduler->add_action( $hook );
+
+		return;
+	}
+
+	if ( ! wp_next_scheduled( $hook ) ) {
+		wp_schedule_single_event( time(), $hook );
+	}
+}
+
+/**
+ * Fills the release cache. Runs from the scheduler, never from a page render.
+ *
+ * @return void
+ */
+function tfhp_refresh_release() {
+	tfhp_get_latest_release( true );
+}
+
+add_action( TFHP_UPDATE_CACHE_KEY . '_refresh', 'tfhp_refresh_release' );
 
 /**
  * Gets the latest release, from github.com in preference to the GitHub API.
@@ -475,17 +533,34 @@ function tfhp_check_for_update( $update, $plugin_data, $plugin_file ) {
 
 	$release = tfhp_get_latest_release();
 
+	$details = array(
+		'id'     => 'https://github.com/' . TFHP_UPDATE_REPO,
+		'slug'   => TFHP_UPDATE_SLUG,
+		'plugin' => $plugin_file,
+	);
+
+	/*
+	 * Answer even when there is nothing to update to. WordPress skips this plugin outright on a falsy
+	 * return (wp-includes/update.php:557), and only files an answer under `no_update` when it gets one
+	 * (:589-595) -- and that entry is what carries the `slug` the plugins list needs before it will
+	 * print "View details" (wp-admin/includes/class-wp-plugins-list-table.php:1204, verified).
+	 * Returning false left the row with no slug, so View details, the details popup and the donate link
+	 * inside it were all unreachable from the Plugins screen whenever this plugin was up to date, which
+	 * is almost always, or whenever the release check failed.
+	 */
 	if ( ! tfhp_release_usable( $release ) ) {
-		return $update;
+		$details['version'] = isset( $plugin_data['Version'] ) ? $plugin_data['Version'] : '0.0.0';
+
+		return $details;
 	}
 
-	return array(
-		'id'      => 'https://github.com/' . TFHP_UPDATE_REPO,
-		'slug'    => TFHP_UPDATE_SLUG,
-		'plugin'  => $plugin_file,
-		'version' => $release['version'],
-		'url'     => $release['url'],
-		'package' => $release['package'],
+	return array_merge(
+		$details,
+		array(
+			'version' => $release['version'],
+			'url'     => $release['url'],
+			'package' => $release['package'],
+		)
 	);
 }
 add_filter( 'update_plugins_github.com', 'tfhp_check_for_update', 10, 3 );
