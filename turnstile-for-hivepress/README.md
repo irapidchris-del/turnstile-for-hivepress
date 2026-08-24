@@ -1,6 +1,6 @@
 # Turnstile for HivePress
 
-**Version:** 2.3.0
+**Version:** 2.3.1
 **Author:** [ChrisB @ HivePress Community](https://community.hivepress.io/u/chrisb/summary)
 **License:** GPLv2 or later
 
@@ -180,6 +180,27 @@ https://github.com/irapidchris-del/turnstile-for-hivepress/releases/latest/downl
 ---
 
 ## Changelog
+
+### 2.3.1
+- A solved captcha is no longer wiped while you are still filling the form
+  in. The widget was reset by any background request HivePress made, which
+  on the listing submission form meant every photo upload and every tag
+  suggestion, so pressing Submit could answer "please verify that you are
+  human" to somebody who just had. Only the form that was actually
+  submitted is reset now.
+- The captcha is no longer shown when Simple Cloudflare Turnstile is not
+  active. Its settings stay in the database when it is deactivated, so a
+  live Cloudflare widget carried on appearing on every protected form
+  while nothing checked the answer, and any submission was accepted. The
+  forms are now left unprotected and visibly so, and the existing admin
+  notice explains what to reinstall.
+- Simple Cloudflare Turnstile's "Failsafe Mode" no longer holds up page
+  loading. Its check on whether Cloudflare is reachable was run while the
+  page was being built, and with Cloudflare slow that added five seconds
+  to the page for every visitor. The answer is now looked up in the
+  background.
+- Deleting the plugin now also clears the update check's own leftovers and
+  cancels its background update check.
 
 ### 2.3.0
 - The Turnstile widget on the WordPress login page now lines up with the

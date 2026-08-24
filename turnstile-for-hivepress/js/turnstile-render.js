@@ -376,15 +376,49 @@
 			}
 		});
 
-		// Reset widget after each HivePress submission (fresh single-use token).
+		// Reset a widget after ITS OWN form is submitted (tokens are single-use).
+		//
+		// Matching /hivepress/v1/ anywhere in the URL and then resetting every
+		// widget on the page was far too wide. That namespace carries photo
+		// uploads, favourite toggles and tag autocompletes, not just form
+		// submissions, and the listing_submit page runs a Turnstile widget, an
+		// uploader and an autocomplete together: each of up to ten photo
+		// uploads wiped the token the visitor had already earned, so pressing
+		// Submit answered "please verify that you are human" to somebody who
+		// just had. Reset only the widget whose own form made the request,
+		// which is what HivePress core does for reCAPTCHA (it resets from the
+		// form's own complete callback, common.js:1185).
 		$(document).on('ajaxComplete', function (event, xhr, settings) {
-			if (settings && settings.url && settings.url.indexOf('/hivepress/v1/') !== -1) {
-				var widgets = document.querySelectorAll('.tfhp-turnstile');
-				for (var i = 0; i < widgets.length; i++) {
+			var url = settings && settings.url ? settings.url : '';
+
+			if (!url) { return; }
+
+			var widgets = document.querySelectorAll('.tfhp-turnstile');
+
+			for (var i = 0; i < widgets.length; i++) {
+				var form = widgets[i].closest ? widgets[i].closest('form') : null;
+
+				// HivePress posts a form to its own data-action URL
+				// (common.js:1161), so that is the only URL that can mean
+				// "this form was just submitted".
+				if (form && sameUrl($(form).data('action'), url)) {
 					resetWidget(widgets[i]);
 				}
 			}
 		});
+	}
+
+	// Compares two URLs as the browser resolves them, so a relative action and
+	// an absolute request URL still match.
+	function sameUrl(a, b) {
+		if (!a || !b) { return false; }
+		if (a === b) { return true; }
+
+		try {
+			return new URL(a, window.location.href).href === new URL(b, window.location.href).href;
+		} catch (e) {
+			return false;
+		}
 	}
 
 	function whenJqueryReady() {

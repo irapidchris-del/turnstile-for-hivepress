@@ -20,12 +20,31 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Checks whether the Turnstile keys are configured in SCT.
+ * Checks whether SCT is present and its Turnstile keys are configured.
+ *
+ * The verifier is part of the test, not just the keys. SCT's options outlive
+ * SCT itself: deactivating the plugin leaves cfturnstile_key and
+ * cfturnstile_secret in wp_options, so a keys-only test still passed and this
+ * plugin carried on rendering a live Cloudflare widget on all protected forms
+ * while tfhp_validate_captcha() returned early at its
+ * function_exists( 'cfturnstile_check' ) guard and accepted every submission,
+ * token or none. The owner saw a challenge on every form and reasonably
+ * believed the site was protected; a bot posting straight to the endpoint was
+ * waved through. Rendering a captcha that verifies nothing is worse than
+ * rendering none, so the gate below now fails the honest way: no widget, and
+ * the missing-SCT admin notice that tfhp_check_dependencies() already queues
+ * says why.
+ *
+ * SCT defines cfturnstile_check() only inside its own
+ * `if ( keys are set )` block (simple-cloudflare-turnstile.php:128), at file
+ * include time, so this is settled before plugins_loaded and cannot race.
  *
  * @return bool
  */
 function tfhp_keys_ready() {
-	return get_option( 'cfturnstile_key' ) && get_option( 'cfturnstile_secret' );
+	return function_exists( 'cfturnstile_check' )
+		&& get_option( 'cfturnstile_key' )
+		&& get_option( 'cfturnstile_secret' );
 }
 
 /**
@@ -36,16 +55,90 @@ function tfhp_keys_ready() {
  * lets submissions through (inc/turnstile.php cfturnstile_field_show(),
  * inc/failsafe.php cfturnstile_handle_failover_backend()). Without this
  * mirror, HivePress forms would keep an unrenderable widget and the submit
- * gate would block them for the whole outage. cfturnstile_is_cloudflare_down()
- * caches its probe in a 2-minute transient, so calling it per form is cheap.
+ * gate would block them for the whole outage.
+ *
+ * READ THE CACHE, NEVER RUN THE PROBE. cfturnstile_is_cloudflare_down()
+ * (inc/failsafe.php:12) does a wp_remote_get() with a 5-second timeout and
+ * writes its transient only AFTER that call returns, so nothing coalesces:
+ * every request arriving inside the window makes its own blocking call. This
+ * ran from tfhp_add_captcha_field() during form construction, and the login
+ * and register modals are built in the footer of nearly every page, so a slow
+ * Cloudflare held page generation for a measured 5.06 seconds per request
+ * site-wide - the same 504 bug class as the 18.6-second updater, arriving
+ * from a different direction. A cold cache therefore answers "not down" and
+ * queues the probe off-request instead.
+ *
+ * Not-down is the only safe cold answer. Answering "down" would switch the
+ * captcha off for every visitor every time the two-minute transient expired,
+ * which is an open door rather than a failsafe. The cost of this direction is
+ * that a genuine outage keeps the widget for the request or two it takes the
+ * queued probe to land, and SCT itself warms the same transient whenever it
+ * renders one of its own fields.
  *
  * @return bool
  */
 function tfhp_failsafe_active() {
-	return get_option( 'cfturnstile_failover' )
-		&& function_exists( 'cfturnstile_is_cloudflare_down' )
-		&& cfturnstile_is_cloudflare_down();
+
+	if ( ! get_option( 'cfturnstile_failover' ) || ! function_exists( 'cfturnstile_is_cloudflare_down' ) ) {
+		return false;
+	}
+
+	$status = get_transient( 'cfturnstile_cf_status' );
+
+	if ( false === $status ) {
+		tfhp_schedule_failsafe_probe();
+
+		return false;
+	}
+
+	return 'down' === $status;
 }
+
+/**
+ * Queues SCT's Cloudflare probe to run off-request.
+ *
+ * Same shape as the updater's release refresh, and for the same reason:
+ * HivePress's scheduler is Action Scheduler, which already refuses a
+ * duplicate of a job with the same hook, so a burst of page loads coalesces
+ * into one probe. WP-Cron is the fallback. Neither blocks the visitor, so
+ * where cron is starved the transient simply stays cold and the widget keeps
+ * rendering, which is the behaviour without the failsafe at all.
+ *
+ * @return void
+ */
+function tfhp_schedule_failsafe_probe() {
+	$hook = 'tfhp_cfturnstile_failsafe_probe';
+
+	// Assigned and then tested: core defines no __isset(), so
+	// isset( hivepress()->x ) is false even for a component that is present.
+	$scheduler = function_exists( 'hivepress' ) ? hivepress()->scheduler : null;
+
+	if ( $scheduler ) {
+		$scheduler->add_action( $hook );
+
+		return;
+	}
+
+	if ( ! wp_next_scheduled( $hook ) ) {
+		wp_schedule_single_event( time(), $hook );
+	}
+}
+
+/**
+ * Runs SCT's Cloudflare probe and lets it write its own transient.
+ *
+ * Runs from the scheduler, never from a page render.
+ *
+ * @return void
+ */
+function tfhp_refresh_failsafe_probe() {
+
+	if ( get_option( 'cfturnstile_failover' ) && function_exists( 'cfturnstile_is_cloudflare_down' ) ) {
+		cfturnstile_is_cloudflare_down();
+	}
+}
+
+add_action( 'tfhp_cfturnstile_failsafe_probe', 'tfhp_refresh_failsafe_probe' );
 
 add_action( 'hivepress/v1/setup', 'tfhp_register_form_hooks', 10 );
 

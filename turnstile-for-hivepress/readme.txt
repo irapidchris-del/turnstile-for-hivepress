@@ -3,7 +3,7 @@ Tags: hivepress, cloudflare, turnstile, captcha, spam
 Requires at least: 5.8
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 2.3.0
+Stable tag: 2.3.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -64,6 +64,23 @@ The plugin honours Simple Cloudflare Turnstile's failsafe setting. With the fail
 It updates itself from its GitHub Releases using WordPress's native update mechanism (the update_plugins_github.com filter, WP 5.8+), with no third-party library. New versions appear on your Plugins screen with an update notice, a "View details" changelog, and one-click update, just like any other plugin. WordPress checks automatically; you can force a check via Dashboard → Updates → Check again, or the plugin's "Check for updates" link.
 
 == Changelog ==
+
+= 2.3.1 =
+* A solved captcha is no longer wiped while you are still filling the form in. The widget was
+  reset by any background request HivePress made, which on the listing submission form meant every
+  photo upload and every tag suggestion, so pressing Submit could answer "please verify that you
+  are human" to somebody who just had. Only the form that was actually submitted is reset now.
+* The captcha is no longer shown when Simple Cloudflare Turnstile is not active. Its settings stay
+  in the database when it is deactivated, so a live Cloudflare widget carried on appearing on
+  every protected form while nothing checked the answer, and any submission was accepted. The
+  forms are now left unprotected and visibly so, and the existing admin notice explains what to
+  reinstall.
+* Simple Cloudflare Turnstile's "Failsafe Mode" no longer holds up page loading. Its check on
+  whether Cloudflare is reachable was run while the page was being built, and with Cloudflare slow
+  that added five seconds to the page for every visitor. The answer is now looked up in the
+  background.
+* Deleting the plugin now also clears the update check's own leftovers and cancels its background
+  update check.
 
 = 2.3.0 =
 * The Turnstile widget on the WordPress login page now lines up with the username and password fields. Cloudflare draws the standard widget at a fixed 300px, which is 30px wider than the fields WordPress gives that page, and Simple Cloudflare Turnstile nudges it a further 15px to the left there, so it hung over both sides of the fields and ran into the edge of the login box. The widget is now placed and sized to the same column as the fields, and stays fully clickable. It applies only where Simple Cloudflare Turnstile is set to protect the WordPress login, registration or password reset form, nothing else on that page is changed, and no JavaScript is added to it. Sites whose login page has been restyled to a different width can set that width with the new `tfhp_login_form_width` filter.
