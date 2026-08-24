@@ -3,7 +3,7 @@
  * Plugin Name: Turnstile for HivePress
  * Plugin URI:  https://github.com/irapidchris-del/turnstile-for-hivepress
  * Description: Protects HivePress forms with Cloudflare Turnstile, using HivePress's own native captcha field system for full modal and AJAX support.
- * Version:     2.2.3
+ * Version:     2.3.0
  * Author:      ChrisB @ HivePress Community
  * Author URI:  https://community.hivepress.io/u/chrisb/summary
  * License:     GPLv2 or later
@@ -41,6 +41,12 @@
  * each Turnstile widget when it becomes visible (Cloudflare's auto-render
  * skips elements that are hidden at page load, which is the case for modal
  * forms sitting in the footer).
+ *
+ * One thing here is not about HivePress forms: inc/login.php sizes the widget
+ * that Simple Cloudflare Turnstile puts on wp-login.php so it matches the
+ * width of the username and password fields instead of overflowing them. It
+ * lives in this plugin because SCT is a third-party plugin, where the change
+ * would be lost on its next update.
  * ---------------------------------------------------------------------------
  *
  * @package TurnstileForHivePress
@@ -50,7 +56,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'TFHP_VERSION', '2.2.3' );
+define( 'TFHP_VERSION', '2.3.0' );
 define( 'TFHP_FILE', __FILE__ );
 define( 'TFHP_DIR', plugin_dir_path( __FILE__ ) );
 define( 'TFHP_URL', plugin_dir_url( __FILE__ ) );
@@ -172,6 +178,16 @@ function tfhp_add_donate_link( $links, $file ) {
  */
 
 require_once TFHP_DIR . 'inc/captcha.php';
+
+/*
+ * Login-page tidy-up.
+ *
+ * Loaded on every request rather than behind is_admin(), because wp-login.php
+ * is not an admin screen: is_admin() is false there, so anything required
+ * inside that block never reaches the login page at all.
+ */
+
+require_once TFHP_DIR . 'inc/login.php';
 
 if ( is_admin() ) {
 	require_once TFHP_DIR . 'inc/admin.php';

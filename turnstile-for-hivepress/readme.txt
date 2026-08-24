@@ -3,7 +3,7 @@ Tags: hivepress, cloudflare, turnstile, captcha, spam
 Requires at least: 5.8
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 2.2.3
+Stable tag: 2.3.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -14,6 +14,8 @@ Protects HivePress forms with Cloudflare Turnstile, using HivePress's own native
 Turnstile for HivePress adds a Cloudflare Turnstile widget to the HivePress forms you choose, including the login, register and reset-password **modal popups**, and verifies the token server-side on every submission.
 
 It mirrors HivePress's own reCAPTCHA integration (the same three form filters core uses), so the widget is a genuine HivePress form field rather than injected HTML. All keys and widget settings (theme, language, size, appearance, failure message, whitelist, failsafe) come from the Simple Cloudflare Turnstile plugin, so its configuration applies automatically.
+
+It also tidies up the WordPress login page. Where Simple Cloudflare Turnstile is protecting wp-login.php, the widget there is placed and sized to match the username and password fields instead of overhanging them.
 
 **Requires both:**
 
@@ -49,6 +51,10 @@ Both share HivePress's captcha field system. If HivePress reCAPTCHA keys are con
 
 Yes. The widget is added as a real HivePress form field and rendered only after the modal has finished opening, so it works reliably in the FancyBox popups, including when switching between login, register and reset password.
 
+= The widget on the WordPress login page does not line up with the fields =
+
+It does now. Cloudflare draws the standard widget at a fixed 300px while the username and password fields on wp-login.php are 270px, and Simple Cloudflare Turnstile nudges the widget a further 15px to the left on that page, so it ended up wider than the fields and hanging over both sides of them. The widget is now placed and sized to exactly the same column as the fields, and stays fully clickable. This applies wherever Simple Cloudflare Turnstile is protecting the WordPress login, registration or password reset form, whether or not you use its HivePress forms. If your login page has been restyled to a different width, filter `tfhp_login_form_width` to the width your fields are drawn at.
+
 = What happens if Cloudflare itself is down? =
 
 The plugin honours Simple Cloudflare Turnstile's failsafe setting. With the failsafe enabled, protected HivePress forms temporarily submit without a challenge while Cloudflare is unreachable, exactly like SCT's own forms. Without the failsafe, submissions are rejected until Cloudflare recovers.
@@ -58,6 +64,9 @@ The plugin honours Simple Cloudflare Turnstile's failsafe setting. With the fail
 It updates itself from its GitHub Releases using WordPress's native update mechanism (the update_plugins_github.com filter, WP 5.8+), with no third-party library. New versions appear on your Plugins screen with an update notice, a "View details" changelog, and one-click update, just like any other plugin. WordPress checks automatically; you can force a check via Dashboard → Updates → Check again, or the plugin's "Check for updates" link.
 
 == Changelog ==
+
+= 2.3.0 =
+* The Turnstile widget on the WordPress login page now lines up with the username and password fields. Cloudflare draws the standard widget at a fixed 300px, which is 30px wider than the fields WordPress gives that page, and Simple Cloudflare Turnstile nudges it a further 15px to the left there, so it hung over both sides of the fields and ran into the edge of the login box. The widget is now placed and sized to the same column as the fields, and stays fully clickable. It applies only where Simple Cloudflare Turnstile is set to protect the WordPress login, registration or password reset form, nothing else on that page is changed, and no JavaScript is added to it. Sites whose login page has been restyled to a different width can set that width with the new `tfhp_login_form_width` filter.
 
 = 2.2.3 =
 * Fixed - checking for updates no longer holds up an admin page. The check ran while WordPress was

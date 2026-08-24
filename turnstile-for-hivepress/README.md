@@ -1,6 +1,6 @@
 # Turnstile for HivePress
 
-**Version:** 2.2.0
+**Version:** 2.3.0
 **Author:** [ChrisB @ HivePress Community](https://community.hivepress.io/u/chrisb/summary)
 **License:** GPLv2 or later
 
@@ -67,7 +67,7 @@ widget instead of Google reCAPTCHA.
 For each protected form it uses the same three HivePress hooks core uses:
 
 - `hivepress/v1/forms/{form}/meta` - flips the form's `captcha` meta flag to true.
-- `hivepress/v1/forms/{form}` - injects a real HivePress field of type `turnstile`.
+- `hivepress/v1/forms/{form}` - injects a real HivePress field of type `hptu_turnstile`.
 - `hivepress/v1/forms/{form}/errors` - verifies the token via `cfturnstile_check()`.
 
 Because the widget is added as a genuine form **field** (rendered inside
@@ -76,8 +76,8 @@ context HivePress supports - including the login, register and reset-password
 **modal popups** - with no per-modal special-casing.
 
 The custom field class is declared in HivePress's own `\HivePress\Fields`
-namespace (as `\HivePress\Fields\Turnstile`) so HivePress resolves the field
-type `turnstile` to it directly.
+namespace (as `\HivePress\Fields\Hptu_Turnstile`) so HivePress resolves the
+field type `hptu_turnstile` to it directly.
 
 ### Modal rendering
 
@@ -115,6 +115,37 @@ flips). If you are migrating to Turnstile, remove the reCAPTCHA keys from
 HivePress settings. A warning is shown in the settings panel when this
 situation is detected.
 
+### The WordPress login page
+
+`inc/login.php` is the one part of this plugin that is not about HivePress
+forms. Simple Cloudflare Turnstile can put its widget on the wp-login.php
+login, register and reset-password forms, and Cloudflare draws the standard
+widget at a fixed 300px. WordPress gives that form a 270px content column
+(`wp-admin/css/login.css`: `#login { width: 320px }`, `.login form` takes 24px
+of padding each side plus a 1px border), so the widget was drawn 30px wider
+than the username and password fields. SCT then pulls it 15px to the left on
+this page (`inc/turnstile.php`, `cfturnstile_admin_styles()`), spreading the
+extra 30px evenly, which leaves it hanging over both edges of the field
+column.
+
+The plugin adds inline CSS on that page, attached to WordPress's own `login`
+stylesheet handle. It undoes SCT's 15px pull, so the widget starts where the
+fields start, then scales it to the field width with a CSS transform - the
+same technique `fitWidget()` in `js/turnstile-render.js` uses for narrow
+modals, which keeps the Cloudflare iframe fully clickable. The margin override
+needs `!important`, because SCT writes that margin against the widget's
+generated id and an id beats any selector built from classes.
+
+Nothing is added to wp-login.php in JavaScript: a script error on that page
+costs the owner access to their own site, and every measurement involved is a
+WordPress core constant.
+
+The CSS is only printed when SCT is configured and one of its three WordPress
+form options is switched on. The `compact` size (150px) gets the alignment but
+no scaling, because it already fits. Sites whose login page has been restyled
+to a different width can filter `tfhp_login_form_width` to the width their
+fields are drawn at.
+
 ### Cloudflare outage behaviour
 
 The plugin honours Simple Cloudflare Turnstile's failsafe setting. When the
@@ -149,6 +180,43 @@ https://github.com/irapidchris-del/turnstile-for-hivepress/releases/latest/downl
 ---
 
 ## Changelog
+
+### 2.3.0
+- The Turnstile widget on the WordPress login page now lines up with the
+  username and password fields. Cloudflare draws the standard widget at a
+  fixed 300px, which is 30px wider than the fields WordPress gives that page,
+  and Simple Cloudflare Turnstile nudges it a further 15px to the left there,
+  so it hung over both sides of the fields and ran into the edge of the login
+  box. The widget is now placed and sized to the same column as the fields,
+  and stays fully clickable. It applies only where Simple Cloudflare Turnstile
+  is protecting the WordPress login, registration or password reset form,
+  nothing else on that page is changed, and no JavaScript is added to it.
+  Sites whose login page has been restyled to a different width can set that
+  width with the new `tfhp_login_form_width` filter.
+
+### 2.2.3
+- Checking for updates no longer holds up an admin page. The check ran while
+  WordPress was building the Plugins screen, so on a site with several of these
+  extensions one page load made one request to GitHub after another and could
+  sit there for many seconds, once, before behaving normally again for hours.
+  The check now runs in the background moments later. Pressing Check for
+  updates still asks GitHub straight away, because you are waiting for that
+  answer.
+- "View details" is back on the Plugins screen. WordPress only offers that link
+  for a plugin that has told it about itself, and this one stayed quiet
+  whenever there was nothing to update to, which is almost always.
+
+### 2.2.2
+- Checking for updates no longer reports "Could not reach GitHub" when nothing
+  is wrong. GitHub allows a server only a limited number of anonymous update
+  checks each hour, shared by every plugin on the site. Update checks now read
+  the release from github.com, which sets no such limit.
+- A failed update check no longer hides an update that is genuinely waiting.
+  The last successful answer is kept until a later check succeeds.
+
+### 2.2.1
+- Fixed the plugin's own link on the Plugins screen, which pointed at the
+  community forum home page rather than the plugin's source.
 
 ### 2.2.0
 - Deleting the plugin now keeps your settings. Your list of protected forms
