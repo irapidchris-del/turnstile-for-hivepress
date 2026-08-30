@@ -1,9 +1,9 @@
 === Turnstile for HivePress ===
 Tags: hivepress, cloudflare, turnstile, captcha, spam
 Requires at least: 5.8
-Tested up to: 7.0
+Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.3.1
+Stable tag: 2.4.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -64,6 +64,13 @@ The plugin honours Simple Cloudflare Turnstile's failsafe setting. With the fail
 It updates itself from its GitHub Releases using WordPress's native update mechanism (the update_plugins_github.com filter, WP 5.8+), with no third-party library. New versions appear on your Plugins screen with an update notice, a "View details" changelog, and one-click update, just like any other plugin. WordPress checks automatically; you can force a check via Dashboard → Updates → Check again, or the plugin's "Check for updates" link.
 
 == Changelog ==
+
+= 2.4.0 =
+* Tidied the HivePress panel on the Turnstile settings page. The longer notes now say the same
+  thing in a sentence or two, and no longer stretch the full width of the screen, where on a wide
+  monitor a single line ran to a couple of hundred characters and was genuinely hard to read.
+* Nothing about the captcha itself has changed: the same forms are protected, and every
+  verification works exactly as before.
 
 = 2.3.1 =
 * A solved captcha is no longer wiped while you are still filling the form in. The widget was

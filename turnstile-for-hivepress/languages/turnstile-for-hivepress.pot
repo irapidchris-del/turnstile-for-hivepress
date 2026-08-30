@@ -2,102 +2,82 @@
 # This file is distributed under the GPLv2 or later.
 msgid ""
 msgstr ""
-"Project-Id-Version: Turnstile for HivePress 2.2.1\n"
-"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/turnstile-for-hivepress\n"
+"Project-Id-Version: Turnstile for HivePress 2.4.0\n"
+"Report-Msgid-Bugs-To: https://github.com/irapidchris-del/turnstile-for-hivepress/issues\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-08-19T12:12:11+00:00\n"
+"POT-Creation-Date: 2026-08-29T22:42:09+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: turnstile-for-hivepress\n"
-
-#. Plugin Name of the plugin
-#: turnstile-for-hivepress.php
-msgid "Turnstile for HivePress"
-msgstr ""
-
-#. Plugin URI of the plugin
-#: turnstile-for-hivepress.php
-msgid "https://github.com/irapidchris-del/turnstile-for-hivepress"
-msgstr ""
 
 #. Description of the plugin
 #: turnstile-for-hivepress.php
 msgid "Protects HivePress forms with Cloudflare Turnstile, using HivePress's own native captcha field system for full modal and AJAX support."
 msgstr ""
 
-#. Author of the plugin
-#: turnstile-for-hivepress.php
-msgid "ChrisB @ HivePress Community"
-msgstr ""
-
-#. Author URI of the plugin
-#: turnstile-for-hivepress.php
-msgid "https://community.hivepress.io/u/chrisb/summary"
-msgstr ""
-
-#: inc/admin.php:82
+#: inc/admin.php:91
 msgid "HivePress"
 msgstr ""
 
-#: inc/admin.php:88
+#: inc/admin.php:97
 msgid "Enter your Cloudflare Turnstile Site Key and Secret Key above, then save, before selecting forms."
 msgstr ""
 
-#: inc/admin.php:94
-msgid "Heads up: HivePress's built-in reCAPTCHA is also configured (Settings > Integrations). Every form selected here will show BOTH captchas and require both to pass, even if that form is not ticked in the HivePress settings. Remove the reCAPTCHA keys there if you want Turnstile only."
+#: inc/admin.php:103
+msgid "Heads up: HivePress's built-in reCAPTCHA is also configured (Settings > Integrations). Every form selected here will show both captchas and require both to pass, whether or not it is ticked in the HivePress settings. Remove the reCAPTCHA keys there if you want Turnstile only."
 msgstr ""
 
-#: inc/admin.php:99
+#: inc/admin.php:108
 msgid "Protected Forms"
 msgstr ""
 
-#: inc/admin.php:102
+#: inc/admin.php:111
 msgid "Select which HivePress forms should display the Turnstile widget. Works on both page forms and modal popups (login, register, reset password)."
 msgstr ""
 
-#: inc/admin.php:125
+#: inc/admin.php:134
 msgid "Using a caching / JS-optimisation plugin?"
 msgstr ""
 
-#: inc/admin.php:126
+#: inc/admin.php:135
 msgid "If the widget does not appear, add these keywords to your plugin's \"Exclude from Delay/Defer JavaScript\" list:"
 msgstr ""
 
-#: inc/admin.php:144
+#: inc/admin.php:153
 msgid "Removing the plugin"
 msgstr ""
 
-#: inc/admin.php:145
-msgid "Your choice of protected forms is kept if you delete this plugin, so you can reinstall it and carry on. WordPress shows its own warning on the delete screen saying the data goes too, but that warning is the same for every plugin and does not apply here unless you tick the box below. Switching the plugin off never removes anything, and your Cloudflare keys and widget settings belong to Simple Cloudflare Turnstile, so they are never touched either way."
+#: inc/admin.php:154
+msgid "Deleting this plugin keeps your list of protected forms, so you can reinstall it and carry on; the delete screen's own warning about data going too only applies here if you tick the box below. Deactivating removes nothing, and your Cloudflare keys and widget settings belong to Simple Cloudflare Turnstile, so they are never touched either way."
 msgstr ""
 
-#: inc/admin.php:156
+#: inc/admin.php:165
 msgid "Delete all data when this plugin is deleted"
 msgstr ""
 
-#: inc/admin.php:159
-msgid "Leave this unticked unless you are certain. With it ticked, deleting the plugin also removes your list of protected forms, so every form you had protected would need selecting again after a reinstall. It cannot be undone and nothing asks you to confirm at the time."
+#: inc/admin.php:168
+msgid "Leave this unticked unless you are certain. With it ticked, deleting the plugin also erases your list of protected forms, with no confirmation at the time and no way to undo it."
 msgstr ""
 
 #. translators: 1: version number, 2: author profile link.
-#: inc/admin.php:167
+#: inc/admin.php:176
 #, php-format
 msgid "Turnstile for HivePress v%1$s by %2$s"
 msgstr ""
 
-#: inc/admin.php:245
+#: inc/admin.php:254
 msgid "Settings"
 msgstr ""
 
-#: inc/captcha.php:175
+#: inc/captcha.php:268
 msgid "Captcha verification failed. Please try again."
 msgstr ""
 
-#: inc/captcha.php:281
+#: inc/captcha.php:374
 msgid "Please verify that you are human."
 msgstr ""
 
@@ -105,98 +85,98 @@ msgstr ""
 msgid "Failed to verify you are human. Please contact us if you are having issues."
 msgstr ""
 
-#: inc/updater.php:214
+#: inc/updater.php:619
 msgid "See the GitHub releases page for the changelog."
 msgstr ""
 
-#: inc/updater.php:228
+#: inc/updater.php:633
 msgid "Check for updates"
 msgstr ""
 
 #. translators: %s: new version number.
-#: inc/updater.php:290
+#: inc/updater.php:697
 #, php-format
 msgid "A new version of Turnstile for HivePress (%s) is available."
 msgstr ""
 
-#: inc/updater.php:293
+#: inc/updater.php:700
 msgid "Turnstile for HivePress is up to date."
 msgstr ""
 
-#: inc/updater.php:296
+#: inc/updater.php:703
+msgid "GitHub limits how many update checks one server may make each hour, and this server has reached that limit. Nothing is wrong with the plugin or your site, and checking will work again within the hour."
+msgstr ""
+
+#: inc/updater.php:706
 msgid "GitHub was reached, but no installable release was found yet, so no update is available."
 msgstr ""
 
-#: inc/updater.php:299
+#: inc/updater.php:709
 msgid "Could not reach GitHub to check for updates. Please try again later."
 msgstr ""
 
-#: inc/updater.php:343
+#: inc/updater.php:753
 msgid "Could not rename the update directory."
 msgstr ""
 
-#: turnstile-for-hivepress.php:97
+#: turnstile-for-hivepress.php:103
 msgid "Login User"
 msgstr ""
 
-#: turnstile-for-hivepress.php:98
+#: turnstile-for-hivepress.php:104
 msgid "Register User"
 msgstr ""
 
-#: turnstile-for-hivepress.php:99
+#: turnstile-for-hivepress.php:105
 msgid "Reset Password"
 msgstr ""
 
-#: turnstile-for-hivepress.php:100
+#: turnstile-for-hivepress.php:106
 msgid "Submit Listing"
 msgstr ""
 
-#: turnstile-for-hivepress.php:101
+#: turnstile-for-hivepress.php:107
 msgid "Report Listing"
 msgstr ""
 
-#: turnstile-for-hivepress.php:102
+#: turnstile-for-hivepress.php:108
 msgid "Claim Listing"
 msgstr ""
 
-#: turnstile-for-hivepress.php:103
+#: turnstile-for-hivepress.php:109
 msgid "Confirm Booking"
 msgstr ""
 
-#: turnstile-for-hivepress.php:104
+#: turnstile-for-hivepress.php:110
 msgid "Dispute Order"
 msgstr ""
 
-#: turnstile-for-hivepress.php:105
+#: turnstile-for-hivepress.php:111
 msgid "Submit Request"
 msgstr ""
 
-#: turnstile-for-hivepress.php:106
+#: turnstile-for-hivepress.php:112
 msgid "Submit Offer"
 msgstr ""
 
-#: turnstile-for-hivepress.php:107
+#: turnstile-for-hivepress.php:113
 msgid "Write a Review"
 msgstr ""
 
-#: turnstile-for-hivepress.php:108
+#: turnstile-for-hivepress.php:114
 msgid "Reply to Review"
 msgstr ""
 
-#: turnstile-for-hivepress.php:109
+#: turnstile-for-hivepress.php:115
 msgid "Send Message"
 msgstr ""
 
-#: turnstile-for-hivepress.php:154
+#: turnstile-for-hivepress.php:160
 msgid "Donate"
 msgstr ""
 
 #. translators: %s: link to the required plugin
-#: turnstile-for-hivepress.php:225
+#: turnstile-for-hivepress.php:241
 #, php-format
 msgid "<strong>Turnstile for HivePress</strong> requires the %s plugin to be installed and active."
-msgstr ""
-
-#: inc/updater.php:628
-msgid "GitHub limits how many update checks one server may make each hour, and this server has reached that limit. Nothing is wrong with the plugin or your site, and checking will work again within the hour."
 msgstr ""

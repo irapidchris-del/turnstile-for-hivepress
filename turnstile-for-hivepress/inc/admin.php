@@ -71,6 +71,15 @@ add_action( 'cfturnstile-settings-section', 'tfhp_render_settings_section' );
 
 /**
  * Renders the HivePress accordion inside the SCT settings page.
+ *
+ * The house settings-screen treatment (chip-style quick-links nav, injected
+ * section ids, widened tooltips) is deliberately NOT applied here. This plugin
+ * has no settings page or HivePress tab of its own: everything renders inside
+ * this one short accordion panel on Simple Cloudflare Turnstile's page, which
+ * is not ours to restyle, and a nav for a single checklist would be noise.
+ * The panel's notes carry their own border-top dividers, and descriptions are
+ * capped at 62em inline because the SCT page puts no width limit on them, so
+ * on a wide monitor a single line ran to a couple of hundred characters.
  */
 function tfhp_render_settings_section() {
 
@@ -84,21 +93,21 @@ function tfhp_render_settings_section() {
 	<div class="sct-panel">
 
 		<?php if ( ! $keys_set ) : ?>
-			<p style="margin:10px 0;color:#b32d2e;">
+			<p style="margin:10px 0;color:#b32d2e;max-width:62em;">
 				<?php esc_html_e( 'Enter your Cloudflare Turnstile Site Key and Secret Key above, then save, before selecting forms.', 'turnstile-for-hivepress' ); ?>
 			</p>
 		<?php endif; ?>
 
 		<?php if ( get_option( 'hp_recaptcha_site_key' ) && get_option( 'hp_recaptcha_secret_key' ) ) : ?>
-			<p style="margin:10px 0;color:#b32d2e;">
-				<?php esc_html_e( 'Heads up: HivePress\'s built-in reCAPTCHA is also configured (Settings > Integrations). Every form selected here will show BOTH captchas and require both to pass, even if that form is not ticked in the HivePress settings. Remove the reCAPTCHA keys there if you want Turnstile only.', 'turnstile-for-hivepress' ); ?>
+			<p style="margin:10px 0;color:#b32d2e;max-width:62em;">
+				<?php esc_html_e( 'Heads up: HivePress\'s built-in reCAPTCHA is also configured (Settings > Integrations). Every form selected here will show both captchas and require both to pass, whether or not it is ticked in the HivePress settings. Remove the reCAPTCHA keys there if you want Turnstile only.', 'turnstile-for-hivepress' ); ?>
 			</p>
 		<?php endif; ?>
 
 		<p style="margin:10px 0 6px;font-weight:600;font-size:13px;">
 			<?php esc_html_e( 'Protected Forms', 'turnstile-for-hivepress' ); ?>
 		</p>
-		<p style="margin:0 0 12px;font-size:12px;color:#777;">
+		<p style="margin:0 0 12px;font-size:12px;color:#777;max-width:62em;">
 			<?php esc_html_e( 'Select which HivePress forms should display the Turnstile widget. Works on both page forms and modal popups (login, register, reset password).', 'turnstile-for-hivepress' ); ?>
 		</p>
 
@@ -121,7 +130,7 @@ function tfhp_render_settings_section() {
 			<?php endforeach; ?>
 		</table>
 
-		<p style="margin:12px 0 0;font-size:12px;color:#777;border-top:1px solid #eee;padding-top:10px;">
+		<p style="margin:12px 0 0;font-size:12px;color:#777;border-top:1px solid #eee;padding-top:10px;max-width:62em;">
 			<strong><?php esc_html_e( 'Using a caching / JS-optimisation plugin?', 'turnstile-for-hivepress' ); ?></strong><br>
 			<?php esc_html_e( 'If the widget does not appear, add these keywords to your plugin\'s "Exclude from Delay/Defer JavaScript" list:', 'turnstile-for-hivepress' ); ?>
 			<code>challenges.cloudflare.com</code>, <code>turnstile-render.js</code>
@@ -140,12 +149,12 @@ function tfhp_render_settings_section() {
 		 * settings are going.
 		 */
 		?>
-		<p style="margin:12px 0 0;font-size:12px;color:#777;border-top:1px solid #eee;padding-top:10px;">
+		<p style="margin:12px 0 0;font-size:12px;color:#777;border-top:1px solid #eee;padding-top:10px;max-width:62em;">
 			<strong><?php esc_html_e( 'Removing the plugin', 'turnstile-for-hivepress' ); ?></strong><br>
-			<?php esc_html_e( 'Your choice of protected forms is kept if you delete this plugin, so you can reinstall it and carry on. WordPress shows its own warning on the delete screen saying the data goes too, but that warning is the same for every plugin and does not apply here unless you tick the box below. Switching the plugin off never removes anything, and your Cloudflare keys and widget settings belong to Simple Cloudflare Turnstile, so they are never touched either way.', 'turnstile-for-hivepress' ); ?>
+			<?php esc_html_e( 'Deleting this plugin keeps your list of protected forms, so you can reinstall it and carry on; the delete screen\'s own warning about data going too only applies here if you tick the box below. Deactivating removes nothing, and your Cloudflare keys and widget settings belong to Simple Cloudflare Turnstile, so they are never touched either way.', 'turnstile-for-hivepress' ); ?>
 		</p>
 
-		<p style="margin:8px 0 0;font-size:12px;color:#777;">
+		<p style="margin:8px 0 0;font-size:12px;color:#777;max-width:62em;">
 			<label>
 				<input
 					type="checkbox"
@@ -156,7 +165,7 @@ function tfhp_render_settings_section() {
 				<?php esc_html_e( 'Delete all data when this plugin is deleted', 'turnstile-for-hivepress' ); ?>
 			</label><br>
 			<span style="display:block;margin:4px 0 0 24px;">
-				<?php esc_html_e( 'Leave this unticked unless you are certain. With it ticked, deleting the plugin also removes your list of protected forms, so every form you had protected would need selecting again after a reinstall. It cannot be undone and nothing asks you to confirm at the time.', 'turnstile-for-hivepress' ); ?>
+				<?php esc_html_e( 'Leave this unticked unless you are certain. With it ticked, deleting the plugin also erases your list of protected forms, with no confirmation at the time and no way to undo it.', 'turnstile-for-hivepress' ); ?>
 			</span>
 		</p>
 

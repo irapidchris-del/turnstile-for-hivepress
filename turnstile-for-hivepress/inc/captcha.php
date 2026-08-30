@@ -230,8 +230,9 @@ function tfhp_add_captcha_field( $args, $form ) {
 /**
  * Verifies the Turnstile token server-side.
  *
- * cfturnstile_check() reads $_POST['cf-turnstile-response'] automatically,
- * which the Turnstile widget populates inside the submitted form.
+ * The SCT helper cfturnstile_check() reads $_POST['cf-turnstile-response']
+ * automatically, which the Turnstile widget populates inside the submitted
+ * form.
  *
  * @param array  $errors Form errors.
  * @param object $form Form object.
@@ -330,12 +331,14 @@ function tfhp_enqueue_scripts() {
 		! wp_script_is( 'tfhp-cfturnstile', 'enqueued' ) &&
 		! wp_script_is( 'cfturnstile', 'enqueued' )
 	) {
-		// phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion -- external API script; a version query string would bust Cloudflare's own cache control.
+		// The phpcs:ignore must sit on the null argument's own line: an ignore
+		// above the call only silences the line directly beneath it, and the
+		// MissingVersion warning is reported against the argument, not the call.
 		wp_enqueue_script(
 			'tfhp-cfturnstile',
 			'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit',
 			array(),
-			null,
+			null, // phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion -- external API script; a version query string would bust Cloudflare's own cache control.
 			true
 		);
 	}
