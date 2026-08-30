@@ -23,9 +23,9 @@ jobs:
       - uses: actions/checkout@v4
 
       # Builds dist/turnstile-for-hivepress.zip (a single top-level
-      # turnstile-for-hivepress/ folder, no version in the name) from the
-      # nested plugin directory. Same script used for local builds, so the
-      # release asset and a local build are always identical.
+      # turnstile-for-hivepress/ folder, no version in the name) from the repo
+      # root, where the plugin now lives. Same script used for local builds, so
+      # the release asset and a local build are always identical.
       - name: Build plugin zip
         run: bash bin/build.sh
 

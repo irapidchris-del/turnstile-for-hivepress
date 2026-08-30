@@ -18,7 +18,9 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SLUG="turnstile-for-hivepress"
-SRC="$ROOT/$SLUG"
+# The plugin sits at the repo root, matching every other extension in the family.
+# It used to live in a "$SLUG/" sub-folder; flattened 2026-08-30.
+SRC="$ROOT"
 DIST="$ROOT/dist"
 MAIN="$SRC/$SLUG.php"
 
@@ -34,8 +36,11 @@ if [ -z "$VERSION" ]; then
 	exit 1
 fi
 
-# Runtime files that ship to users. Dev files (bin/, dist/, RELEASING.md,
-# .git, .github) live at the repo root and are excluded by construction.
+# Runtime files that ship to users. Everything else at the root - bin/, dist/,
+# RELEASING.md, phpcs.xml, .git, .github - is dev tooling and is excluded by NOT
+# being named here. Since the flattening, that exclusion is this list rather than
+# the directory layout, so add any new top-level file or folder here as well or
+# it is silently missing from the release while every local test still passes.
 INCLUDE=( "$SLUG.php" uninstall.php readme.txt README.md LICENSE.txt inc js languages )
 
 echo "Building $SLUG v$VERSION ..."
@@ -45,6 +50,10 @@ mkdir -p "$DIST/$SLUG"
 for item in "${INCLUDE[@]}"; do
 	if [ -e "$SRC/$item" ]; then
 		cp -R "$SRC/$item" "$DIST/$SLUG/"
+	else
+		# A rename is otherwise indistinguishable from a file that was never
+		# meant to ship, and the zip builds happily either way.
+		echo "warning: $item is absent from the repository" >&2
 	fi
 done
 
