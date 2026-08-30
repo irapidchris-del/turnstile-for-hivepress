@@ -141,7 +141,7 @@ It updates itself from its GitHub Releases using WordPress's native update mecha
 
 = 2.0.8 =
 * Pre-release audit: all integration points verified against the actual HivePress and Simple Cloudflare Turnstile source code.
-* Removed the `cf-turnstile` class from the widget container so an auto-render copy of the Cloudflare API (loaded by SCT for other forms on the page) can never break our widgets.
+* Removed the `cf-turnstile` class from the widget container so an auto-render copy of the Cloudflare API, loaded by Simple Cloudflare Turnstile for other forms on the page, can never break this plugin's widgets.
 * Only one copy of the Cloudflare API is loaded when both plugins enqueue one on the same page.
 * Settings-panel warning when HivePress's built-in reCAPTCHA is also configured.
 * Frontend scripts are skipped when HivePress is inactive.
