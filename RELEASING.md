@@ -1,7 +1,7 @@
 # Releasing Turnstile for HivePress
 
 The plugin updates itself from this repository's **GitHub Releases** using
-WordPress's native `update_plugins_github.com` filter (WP 5.8+) — no third-party
+WordPress's native `update_plugins_github.com` filter (WP 5.8+), with no third-party
 library. New versions appear on every site's **Plugins** screen (update notice,
 "View details", one-click update). See `turnstile-for-hivepress/inc/updater.php`.
 
@@ -16,14 +16,14 @@ zip and attaches it to the release automatically.
 - **The `Update URI` header** (`https://github.com/irapidchris-del/turnstile-for-hivepress`)
   is what routes WordPress's update check to our filter. Don't change it.
 - **The release tag** is the version the updater compares against. Tag `2.1.0`
-  or `v2.1.0` — a leading `v` is stripped. An update is offered only when the
+  or `v2.1.0`; a leading `v` is stripped. An update is offered only when the
   latest release's version is **higher** than the installed one.
 - **The release asset** must be named exactly **`turnstile-for-hivepress.zip`**
   and contain a single top-level `turnstile-for-hivepress/` folder. The updater
   picks the first `*.zip` asset; the fixed name also powers the always-latest
   download link. The workflow builds this for you via `bin/build.sh`.
 
-## Releasing from a Claude / automated session
+## Releasing from an automated session
 
 `gh` and the raw releases REST API are not available inside sessions, so drive
 the workflow through the GitHub MCP tools:
@@ -60,7 +60,7 @@ commit, updates the notes (if provided) and re-uploads the asset with
 ## The always-latest download link (for the forum post)
 
 Because the asset name is fixed, this URL **always** redirects to the newest
-release's asset and downloads it immediately — post it once, never edit it:
+release's asset and downloads it immediately. Post it once, never edit it:
 
 ```
 https://github.com/irapidchris-del/turnstile-for-hivepress/releases/latest/download/turnstile-for-hivepress.zip
@@ -69,7 +69,7 @@ https://github.com/irapidchris-del/turnstile-for-hivepress/releases/latest/downl
 ## Notes
 
 - A **pre-release** on GitHub is skipped by the `releases/latest` API, so it
-  never triggers an update notice — handy for test builds.
+  never triggers an update notice, handy for test builds.
 - The updater only activates on installs already running a version that includes
   it (2.1.0+). Distribute 2.1.0 via the zip / forum link once; from then on,
   every newer release auto-updates existing sites.
