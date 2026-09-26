@@ -263,8 +263,7 @@ https://github.com/irapidchris-del/turnstile-for-hivepress/releases/latest/downl
   the standard widget at a fixed 300px, so inside tight popups (viewports
   around 350px and below) it ran past the modal edge and clipped. The widget
   now scales down to fit its container, stays fully interactive, and re-fits
-  on rotation or resize. Verified at 320px, 360px and 390px. Found during the
-  staging pass on a real-device viewport.
+  on rotation or resize. Verified at 320px, 360px and 390px.
 
 ### 2.1.2
 - Translations now load through WordPress's own just-in-time mechanism from the
